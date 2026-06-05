@@ -15,6 +15,7 @@ Skills are drop-in prompt modules for Claude Code. Copy a skill folder into your
 | [`claude-design`](skills/claude-design/) | Generates a complete, ready-to-paste prompt for [claude.ai/design](https://claude.ai/design) — reads your project context automatically so the slides contain real content, not placeholders | `/claude-design` |
 | [`meeting-summary`](skills/meeting-summary/) | Turns a meeting transcript into a structured summary: decisions, action items, key insights, open questions. Includes a Fathom fetch script to pull transcripts automatically. | `/meeting-summary` |
 | [`jira-story-writer`](skills/jira-story-writer/) | Creates self-contained, agent-ready Jira tickets from a one-line description — reads your codebase to fill in real file paths, patterns, and acceptance criteria | `/jira-story-writer` |
+| [`design-system-creator`](skills/design-system-creator/) | Produces a complete, Claude-Design-ready design system folder for any brand — builds one from scratch via research, or extracts it from an existing business's site and shipped assets | `/design-system-creator` |
 
 ---
 
@@ -49,6 +50,7 @@ Some skills need configuration before use:
 | [`claude-design`](skills/claude-design/README.md) | Your brand accent colour (`<ACCENT_HEX>`) + project context file paths |
 | [`meeting-summary`](skills/meeting-summary/README.md) | `FATHOM_API_KEY` + `FATHOM_RECORDED_BY` in `.env` (only if using Fathom); install `requests python-dotenv` |
 | [`jira-story-writer`](skills/jira-story-writer/README.md) | `<JIRA_CLOUD_ID>`, `<PROJECT_KEY>`, `<CONFLUENCE_SPACE>`, `<PARENT_PAGE>` in the SKILL.md |
+| [`design-system-creator`](skills/design-system-creator/README.md) | Firecrawl CLI (free API key), `extract-design-system`, Playwright Chromium — the skill runs a diagnostic and guides installation |
 
 Open the skill's `README.md` for the full setup guide.
 
