@@ -1,6 +1,6 @@
 # Components
 
-React + Tailwind starters. Pair them with [`../tokens/tailwind.preset.js`](../tokens/tailwind.preset.js).
+React + Tailwind starters. Pair them with the preset generated from [`../tokens/tailwind.preset.js.template`](../tokens/tailwind.preset.js.template).
 
 These are intentionally thin — accessibility primitives, {{BRAND_NAME}} styling, no design system bloat. Drop them into a Next.js / Vite project, extend as needed.
 
@@ -9,7 +9,7 @@ Because every component consumes Tailwind classes (`bg-brand-600`, `text-ink-900
 ## Dependencies
 
 ```bash
-npm install react lucide-react class-variance-authority clsx tailwind-merge
+npm install react lucide-react class-variance-authority clsx tailwind-merge tailwindcss-animate
 ```
 
 Tailwind config:

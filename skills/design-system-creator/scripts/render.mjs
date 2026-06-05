@@ -69,14 +69,19 @@ async function inferDimensions(svgPath) {
 }
 
 // ── Rendering ─────────────────────────────────────────────────
+if (svgPaths.length > 1 && (width || height)) {
+  console.warn(`⚠ --width/--height apply to ALL ${svgPaths.length} inputs — per-file viewBox sizing is skipped. Run files separately for per-file dimensions.`);
+}
+
 const browser = await chromium.launch();
 
-for (const svgPath of svgPaths) {
-  const svg = await fs.readFile(svgPath, 'utf8');
-  const { width: w, height: h } = await inferDimensions(svgPath);
-  const base = svgPath.replace(/\.svg$/, '');
+try {
+  for (const svgPath of svgPaths) {
+    const svg = await fs.readFile(svgPath, 'utf8');
+    const { width: w, height: h } = await inferDimensions(svgPath);
+    const base = svgPath.replace(/\.svg$/, '');
 
-  const html = `<!doctype html>
+    const html = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -96,16 +101,18 @@ for (const svgPath of svgPaths) {
 <body>${svg}</body>
 </html>`;
 
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
-  const page = await ctx.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(500);
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
+    const page = await ctx.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
 
-  await page.screenshot({ path: `${base}.png`, type: 'png' });
-  await page.screenshot({ path: `${base}.jpg`, type: 'jpeg', quality: 92 });
-  console.log(`✓ rendered ${path.basename(svgPath)} → ${base}.png + .jpg (${w}×${h})`);
+    await page.screenshot({ path: `${base}.png`, type: 'png' });
+    await page.screenshot({ path: `${base}.jpg`, type: 'jpeg', quality: 92 });
+    console.log(`✓ rendered ${path.basename(svgPath)} → ${base}.png + .jpg (${w}×${h})`);
 
-  await ctx.close();
+    await ctx.close();
+  }
+} finally {
+  // Always release Chromium, even if a render throws mid-loop.
+  await browser.close();
 }
-
-await browser.close();

@@ -108,4 +108,6 @@ module.exports = {
       },
     },
   },
+  // Required by nav.tsx's mobile drawer (`animate-in fade-in`)
+  plugins: [require('tailwindcss-animate')],
 }

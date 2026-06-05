@@ -30,7 +30,7 @@ export const Hero: React.FC<HeroProps> = ({
   className,
   ...props
 }) => (
-  <section className={cn('bg-paper py-24 md:py-16', className)} {...props}>
+  <section className={cn('bg-paper py-16 md:py-24', className)} {...props}>
     <div className={cn(
       'max-w-container mx-auto px-6 grid gap-12 items-center',
       image ? 'md:grid-cols-2' : 'md:grid-cols-1'

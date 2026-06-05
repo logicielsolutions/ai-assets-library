@@ -21,7 +21,7 @@ export const CtaSection: React.FC<CtaSectionProps> = ({
 }) => (
   <section
     className={cn(
-      'py-24 md:py-16',
+      'py-16 md:py-24',
       variant === 'dark'  ? 'bg-brand-900 text-paper'  : 'bg-brand-50 text-ink-900',
       className
     )}

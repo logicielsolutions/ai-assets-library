@@ -4,7 +4,7 @@
  *
  * Exports:
  *   - FadeIn          — on-viewport fade + 8px translate-up reveal
- *   - Stagger         — staggers children with FadeIn (max 5 children)
+ *   - Stagger         — staggers children with FadeIn (max 10 children; delay plateaus after the 5th)
  *   - CountUp         — animated number counter (driven by IntersectionObserver)
  *   - Spotlight       — faint brand-colored spotlight wash behind a hero
  *   - QuietMarquee    — slow, low-contrast logo row (for "as seen in" bands)
@@ -118,10 +118,7 @@ export const Spotlight: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ clas
     className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}
     {...props}
   >
-    <div
-      className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[80%] h-[60%] rounded-full blur-3xl opacity-40"
-      style={{ background: 'radial-gradient(ellipse at center, #EAF0FD 0%, transparent 60%)' }}
-    />
+    <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[80%] h-[60%] rounded-full blur-3xl opacity-40 bg-[radial-gradient(ellipse_at_center,theme(colors.brand.50)_0%,transparent_60%)]" />
   </div>
 );
 

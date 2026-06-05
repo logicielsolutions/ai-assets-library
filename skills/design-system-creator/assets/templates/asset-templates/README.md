@@ -45,7 +45,7 @@ For the inverse variant, swap `{{PRIMARY}}` → `{{PAPER_HEX}}` and `{{PAPER}}` 
 
 ### Copy substitution
 
-Each template has per-template copy placeholders — e.g., `{{HEADLINE_LINE_1}}`, `{{SLIDE_KICKER_UPPERCASE}}`, `{{BIG_STAT}}`, `{{STAT_DESCRIPTION}}`. These come from the brand's `voice/homepage-copy.md` or are generated fresh per asset per [`../voice/`](../voice/) rules.
+Each template has per-template copy placeholders — e.g., `{{HEADLINE_LINE_1}}`, `{{SLIDE_KICKER_UPPERCASE}}`, `{{BIG_STAT}}`, `{{STAT_DESCRIPTION}}`. These come from the brand's `voice/homepage-copy.md` or are generated fresh per asset following the rules in the generated `design-system/voice/` and `foundations/voice.md` files.
 
 Keep copy tight:
 - Overlines: ≤3 words, uppercased.
@@ -58,7 +58,7 @@ Keep copy tight:
 After substitution, the SVGs are ready to pass through the renderer:
 
 ```bash
-node design-system-creator-skill/scripts/render.mjs \
+node .claude/skills/design-system-creator/scripts/render.mjs \
   design-system/assets/templates/og-image.svg \
   design-system/assets/templates/instagram-carousel-cover.svg \
   design-system/assets/templates/instagram-carousel-body.svg \
