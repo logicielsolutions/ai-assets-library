@@ -200,4 +200,4 @@ Do not skip this step. It is the hand-off and the whole point of producing the s
 - Non-negotiables + reasoning: [references/non-negotiables.md](references/non-negotiables.md)
 - Claude Design hand-off text: [references/claude-design-form.md](references/claude-design-form.md)
 - Rendering script: [scripts/render.mjs](scripts/render.mjs)
-- Templates (tokens, logo, components, applications, voice): [assets/templates/](assets/templates/)
+- Templates (tokens, logo, components, asset templates, patterns): [assets/templates/](assets/templates/)

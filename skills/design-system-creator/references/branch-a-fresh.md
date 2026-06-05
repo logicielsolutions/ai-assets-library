@@ -162,7 +162,7 @@ Vocabulary, voice examples, and homepage copy are *not* purely templatic. Genera
 - The specific pains named during discovery (Q2)
 - The personality adjectives (Q5)
 
-Refer to [../assets/templates/voice/vocabulary-skeleton.md](../assets/templates/voice/vocabulary-skeleton.md) for structure and expand it with the user's world.
+Structure `vocabulary.md` per the field-by-field spec in [output-structure.md](output-structure.md) and expand it with the user's world.
 
 ### Asset templates — synthetic, but flagged for replacement
 

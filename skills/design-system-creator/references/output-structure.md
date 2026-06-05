@@ -227,7 +227,7 @@ Drop-in hero variants. Produce:
 
 ## `applications/`
 
-Full templates in [../assets/templates/applications/](../assets/templates/applications/). Produce:
+Generate each guide from the specs below (there are no pre-built templates for these — they're written per-brand from the foundations + tokens you've already produced). Produce:
 
 ### `web.md`
 Global primitives (max width, gutter, paper/surface rhythm, section padding). Nav bar spec. Hero rules + JSX template. Six section patterns (why/how/case/feature/pricing/final-CTA). Footer spec. Pages every brand should have. What we never do. Accessibility baseline.

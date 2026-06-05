@@ -173,7 +173,7 @@ When generating logo SVGs from the user's source files:
 - Find the highest-resolution copy available (uploaded file > website-scraped file > favicon).
 - Identify every visible feature in the source. If the mark is *just a circle and a smile*, render exactly that. Do not add eye dots, decorative tails, secondary strokes, or "polish" elements that aren't in the source.
 - After rendering, run [../scripts/render.mjs](../scripts/render.mjs) on your SVG and visually compare the rasterized output against the source. Confirm that every visible feature (and only those features) is present.
-- Update [../assets/templates/logo/motifs.md](../assets/templates/logo/motifs.md) and [logo/usage.md](logo/usage.md) — under "Construction" — to explicitly call out the simplifying choices ("the mark has no eyes — head + smile only") so future LLMs reading the system don't add features back in.
+- Update [../assets/templates/logo/motifs.md](../assets/templates/logo/motifs.md) and the generated `design-system/logo/usage.md` — under "Construction" — to explicitly call out the simplifying choices ("the mark has no eyes — head + smile only") so future LLMs reading the system don't add features back in.
 - If the source is too low-res to read confidently, **ask the user for a higher-res version before generating.** Do not invent details to "clean up" a blurry input.
 
 ---

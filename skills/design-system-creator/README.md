@@ -47,3 +47,4 @@ design-system-creator/
 - The skill refuses to invent brand values — it scrapes real data (Firecrawl + extract-design-system) and uses your real shipped assets as templates rather than recreating them synthetically.
 - It enforces ten opinionated "non-negotiables" (one primary color, one typeface, sentence-case headlines, no hype vocabulary, minimal motion…) — see `references/non-negotiables.md` for the reasoning. It will push back if a choice violates them.
 - On Branch A it waits for your explicit sign-off on color + typography + logo + name before generating anything.
+- The `evals/` folder is intentional (this library's first skill to ship one): three test prompts with expected outputs you can use to sanity-check the skill after changes. It isn't wired into any CI.

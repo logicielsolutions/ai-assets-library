@@ -19,9 +19,20 @@
  *   npx playwright install chromium
  */
 
-import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+
+let chromium;
+try {
+  ({ chromium } = await import('playwright'));
+} catch {
+  console.error(
+    'Playwright is not installed. Run:\n' +
+    '  npm install playwright\n' +
+    '  npx playwright install chromium'
+  );
+  process.exit(1);
+}
 
 // ── Argument parsing ──────────────────────────────────────────
 const args = process.argv.slice(2);
