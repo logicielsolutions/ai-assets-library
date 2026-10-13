@@ -1,0 +1,10 @@
+{
+  "name": "ai-assets-skills",
+  "version": "0.1.0",
+  "description": "All skills from ai-assets-library: grill-me, git-push, claude-design, meeting-summary, jira-story-writer, teach.",
+  "author": {
+    "name": "Kumar Gaurav",
+    "email": "kumargaurav@logiciel.io"
+  },
+  "skills": "./"
+}

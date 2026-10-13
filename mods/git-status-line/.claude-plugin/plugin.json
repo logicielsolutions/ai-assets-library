@@ -1,0 +1,9 @@
+{
+  "name": "git-status-line",
+  "version": "0.1.0",
+  "description": "Shows the current git branch and number of changed files in the Claude Code status line, refreshed after every turn.",
+  "author": {
+    "name": "Kumar Gaurav",
+    "email": "kumargaurav@logiciel.io"
+  }
+}
