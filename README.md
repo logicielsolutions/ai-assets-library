@@ -1,6 +1,8 @@
 # ai-assets-library
 
-A public library of reusable **Claude Code skills** — open for anyone to use and contribute to.
+A public library of reusable **Claude Code skills and mods** — open for anyone to use and contribute to.
+
+This repo is also a **Claude Code plugin marketplace**, so everything here installs with one `/plugin install` line.
 
 Skills are drop-in prompt modules for Claude Code. Copy a skill folder into your project, invoke it by name, and Claude follows a structured, tested workflow for that task — so you get consistent results without re-explaining the process every time.
 
@@ -15,7 +17,18 @@ Skills are drop-in prompt modules for Claude Code. Copy a skill folder into your
 | [`claude-design`](skills/claude-design/) | Generates a complete, ready-to-paste prompt for [claude.ai/design](https://claude.ai/design) — reads your project context automatically so the slides contain real content, not placeholders | `/claude-design` |
 | [`meeting-summary`](skills/meeting-summary/) | Turns a meeting transcript into a structured summary: decisions, action items, key insights, open questions. Includes a Fathom fetch script to pull transcripts automatically. | `/meeting-summary` |
 | [`jira-story-writer`](skills/jira-story-writer/) | Creates self-contained, agent-ready Jira tickets from a one-line description — reads your codebase to fill in real file paths, patterns, and acceptance criteria | `/jira-story-writer` |
+| [`teach`](skills/teach/) | Builds a stateful teaching workspace for learning a topic over multiple sessions: mission, resources, lessons, references, and learning records | `/teach` |
 | [`design-system-creator`](skills/design-system-creator/) | Produces a complete, Claude-Design-ready design system folder for any brand — builds one from scratch via research, or extracts it from an existing business's site and shipped assets | `/design-system-creator` |
+
+---
+
+## Mods
+
+Mods change Claude Code itself: status-line entries, panes, toasts, slash commands, hooks on tool calls or prompts. Each one lives in [`mods/`](mods/).
+
+| Mod | What it does | Install |
+|-----|-------------|---------|
+| [`git-status-line`](mods/git-status-line/) | Shows the current git branch and changed-file count in the status line, refreshed after every turn | `/plugin install git-status-line --marketplace logicielsolutions/ai-assets-library` |
 
 ---
 
@@ -27,7 +40,31 @@ This library is a collection of skills that turned out to be genuinely reusable 
 
 ---
 
-## How to install a skill
+## How to install
+
+### Via the marketplace (recommended)
+
+In a Claude Code terminal session:
+
+```
+/plugin install ai-assets-skills --marketplace logicielsolutions/ai-assets-library   # all skills
+/plugin install git-status-line  --marketplace logicielsolutions/ai-assets-library   # a mod
+```
+
+Answer `y` to add the marketplace, then pick a scope (user scope = every session). Plugin skills are namespaced, e.g. `/ai-assets-skills:git-push`. Run `/plugin` to update or remove them later.
+
+To have everyone on a project prompted to install, add this to that project's `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "ai-assets-library": { "source": { "source": "github", "repo": "logicielsolutions/ai-assets-library" } }
+  },
+  "enabledPlugins": { "git-status-line@ai-assets-library": true, "ai-assets-skills@ai-assets-library": true }
+}
+```
+
+### Copy a single skill
 
 1. Copy the skill folder into your project's `.claude/skills/` directory:
    ```bash
@@ -50,6 +87,7 @@ Some skills need configuration before use:
 | [`claude-design`](skills/claude-design/README.md) | Your brand accent colour (`<ACCENT_HEX>`) + project context file paths |
 | [`meeting-summary`](skills/meeting-summary/README.md) | `FATHOM_API_KEY` + `FATHOM_RECORDED_BY` in `.env` (only if using Fathom); install `requests python-dotenv` |
 | [`jira-story-writer`](skills/jira-story-writer/README.md) | `<JIRA_CLOUD_ID>`, `<PROJECT_KEY>`, `<CONFLUENCE_SPACE>`, `<PARENT_PAGE>` in the SKILL.md |
+| [`teach`](skills/teach/) | No external credentials; the skill creates and maintains learning workspace files such as `MISSION.md`, `RESOURCES.md`, `lessons/`, `reference/`, and `learning-records/` |
 | [`design-system-creator`](skills/design-system-creator/README.md) | Firecrawl CLI (free API key), `extract-design-system`, Playwright Chromium — the skill runs a diagnostic and guides installation |
 
 Open the skill's `README.md` for the full setup guide.
@@ -71,6 +109,19 @@ Open the skill's `README.md` for the full setup guide.
    ```
 4. Add a `README.md` explaining what the skill does, how to invoke it, and any configuration needed.
 5. Make sure the skill is **self-contained** — no secrets, no hardcoded internal IDs, runnable by anyone with no prior knowledge of your project.
+6. Open a pull request.
+
+### Contributing a mod
+
+1. Draft it with `/plugin-authoring` in a Claude Code session, or run your folder live with `claude --plugin-dir mods/<name>`.
+2. Put it in `mods/<kebab-name>/` with `.claude-plugin/plugin.json`, `hooks/hooks.json` and the hooks module (see [`git-status-line`](mods/git-status-line/) for the shape).
+3. Add at least one `hooks/*.test.ts`, then check it:
+   ```bash
+   claude plugin validate mods/<name>
+   claude plugin test mods/<name>
+   ```
+4. Add an entry to [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) and a row to the Mods table above, then run `claude plugin validate .`.
+5. Bump `version` in the mod's `plugin.json` on every change so teammates get the update.
 6. Open a pull request.
 
 ---

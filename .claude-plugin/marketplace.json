@@ -1,0 +1,19 @@
+{
+  "name": "ai-assets-library",
+  "owner": {
+    "name": "Logiciel Solutions"
+  },
+  "description": "Reusable Claude Code skills and mods from Logiciel Solutions.",
+  "plugins": [
+    {
+      "name": "ai-assets-skills",
+      "source": "./skills",
+      "description": "All skills in this library, installed as one plugin."
+    },
+    {
+      "name": "git-status-line",
+      "source": "./mods/git-status-line",
+      "description": "Git branch and changed-file count in the status line."
+    }
+  ]
+}
