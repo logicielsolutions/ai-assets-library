@@ -180,10 +180,10 @@ When generating logo SVGs from the user's source files:
 
 ## Step 6 — Finalize
 
-Same as Branch A — produce the Claude Design form text per [claude-design-form.md](claude-design-form.md) and hand back:
+Same as Branch A — produce the Claude Design build message per [claude-design-form.md](claude-design-form.md) and hand back:
 
 1. The `design-system/` folder path.
-2. The two pasteable text blocks for Claude Design's form.
+2. The steps to load the folder into Claude Design, plus the pasteable build message. If the business already maintains a component library in code, also point them to `/design-sync` for that library (see the reference file).
 3. The `research/reconciliation.md` so the user can see the decisions you made.
 4. A "gaps" note — anything you needed to invent (e.g., "the brand had no motion guidance; I applied defaults; here's where you might want to customize").
 

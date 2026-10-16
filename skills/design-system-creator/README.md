@@ -1,13 +1,13 @@
 # design-system-creator
 
-Produces a complete, portable **design system folder** for any brand — ready to upload to [Claude Design](https://claude.ai/design)'s "Set up your design system" flow, or to feed as context to any LLM that produces brand assets.
+Produces a complete, portable **design system folder** for any brand — ready to load into Claude Design (attach it to a Claude chat and Claude builds the design system from it), or to feed as context to any LLM that produces brand assets.
 
 It handles two paths:
 
 - **Branch A — Fresh:** building a brand from scratch (discovery interview → category research → synthesis → full system)
 - **Branch B — Extract:** codifying the design system of a business you already run (website scrape, logos, fonts, shipped assets → reconcile → codify)
 
-The output is a `design-system/` folder containing foundations docs (color, typography, voice, spacing, motion…), design tokens (JSON, CSS custom properties, Tailwind preset), logo SVGs + rendered rasters, React/Tailwind component starters, per-surface application guides (web, decks, Instagram, LinkedIn, email, ads), and the ready-to-paste Claude Design setup form text.
+The output is a `design-system/` folder containing foundations docs (color, typography, voice, spacing, motion…), design tokens (JSON, CSS custom properties, Tailwind preset), logo SVGs + rendered rasters, React/Tailwind component starters, per-surface application guides (web, decks, Instagram, LinkedIn, email, ads), and a ready-to-paste Claude Design build message.
 
 ## How to use
 
@@ -36,7 +36,7 @@ No secrets are stored in the skill — the Firecrawl API key lives in your own l
 ```
 design-system-creator/
 ├── SKILL.md                  — entry point: branch selection, asset-fidelity rules, non-negotiables
-├── references/               — full playbooks (Branch A, Branch B, setup, output spec, form text)
+├── references/               — full playbooks (Branch A, Branch B, setup, output spec, Claude Design hand-off)
 ├── scripts/render.mjs        — Playwright SVG → JPG/PNG renderer
 ├── assets/templates/         — token/logo/component/asset templates the skill fills in
 └── evals/evals.json          — test prompts with expected outputs

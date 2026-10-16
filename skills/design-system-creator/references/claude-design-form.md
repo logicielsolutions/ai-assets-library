@@ -1,18 +1,30 @@
 # The Claude Design hand-off
 
-At the end of every run — Branch A or B — produce two blocks of text the user can paste directly into Claude Design's "Set up your design system" form.
+At the end of every run — Branch A or B — produce the text the user needs to turn `design-system/` into a design system inside Claude Design.
 
-## Claude Design's form has three fields that matter
+## Where design systems live now
 
-1. **Company name and blurb** (textarea) — up to ~80 words. This becomes part of Claude Design's context for every future asset it generates.
-2. **Examples of your design system** (file upload) — they upload the `design-system/` folder you just produced.
-3. **Any other notes?** (textarea) — free-form. This is where you front-load the non-negotiables so Claude Design doesn't drift.
+Since September 2026, Claude Design runs inside Claude itself — any chat, the Artifacts tab, and Claude Code. A design system is saved as an artifact, and Claude checks every design it makes against that system and corrects drift before showing it. There are two ways in:
 
-You do not control field #2 — the user uploads the folder. But you *do* produce the exact text for fields #1 and #3.
+1. **Build it from a chat (default for this skill).** The user starts a chat in Claude, attaches the `design-system/` folder (plus any font files — see below), and pastes the **build message** you produce here. Claude builds the design system from those files. This path takes docs, tokens, logos, decks, screenshots and fonts, which is exactly what this skill outputs.
+2. **`/design-sync` from Claude Code — only for a real component library.** It reads tokens and components straight from a buildable codebase, and "works best for product design systems in code." The `components/*.tsx` this skill generates are starters, not a built package, so don't send the user here for them. Mention it only on Branch B when the business already maintains its own component library in code — then the foundations, voice and non-negotiables from `design-system/` still belong in that sync's written conventions.
+
+The old standalone app at claude.ai/design (with its "Set up your design system" onboarding form) closes on **December 14, 2026**. If the user is still on it before then, the same two text blocks below work there: the blurb goes in the company-blurb field, the notes in the notes field.
+
+If you're running somewhere that can create Claude Design design systems directly, offer to do it now from the finished folder instead of handing off.
+
+## The build message is two blocks
+
+Produce two blocks of text and hand them back pasted together as one message:
+
+1. **Company name and blurb** — up to ~80 words. Tells Claude what the business is and which surfaces the system must cover.
+2. **Notes** — the non-negotiables, front-loaded so the generated system (and every design made from it) doesn't drift.
+
+The user attaches the folder; you write the text. Real shipped assets in `assets/templates/` go up with the folder — Claude's own guidance is to "include real examples, not just specs," because a finished page says more about a brand's feel than a palette does.
 
 ---
 
-## Field 1 — Company name and blurb
+## Block 1 — Company name and blurb
 
 ### Format
 
@@ -40,11 +52,11 @@ One flowing paragraph. Start with the brand name + colon. Include:
 
 ---
 
-## Field 2 — Any other notes?
+## Block 2 — Notes
 
 ### Purpose
 
-Claude Design's upload will ingest every file in `design-system/` — but the *non-negotiables* that make the system feel like a system (and not just a folder of fragments) are easy for an LLM to skip over. Put them here, in the "notes" field, so they sit at the top of Claude Design's prompt context and consistently override defaults.
+Claude reads every file in `design-system/` when it builds the system — but the *non-negotiables* that make the system feel like a system (and not just a folder of fragments) are easy for an LLM to skip over. Put them here, in the build message, so they sit at the top of Claude's context and consistently override defaults.
 
 ### Format
 
@@ -86,18 +98,18 @@ Everything should make {{AUDIENCE_SHORTHAND}} feel {{DESIRED_FEELING}}, not sold
 
 ## A separate note on font files
 
-Claude Design loads web output using Google Fonts. If the user's chosen typeface is not on Google Fonts (e.g., Söhne, GT Walsheim, Graphik), they'll need to upload the actual font files under the "fonts, logos, and assets" field as well.
+Claude Design's guidance is to import "a complete design system that includes your styles, fonts, and components." A Google Font like Inter can be pulled in by name, but a licensed face (Söhne, GT Walsheim, Graphik, …) only renders correctly if its files go up with the folder.
 
 When handing back, tell the user explicitly:
 
-- **If the brand uses Inter** (or any Google Font): "You can skip the fonts/logos/assets slot — everything's in `design-system/`."
-- **If the brand uses a licensed display font** (Söhne, GT Walsheim, Graphik, etc.): "You'll want to drop the `.woff2`/`.otf` files for {{FONT_NAME}} into the fonts slot, because Claude Design can't load them from Google Fonts."
+- **If the brand uses Inter** (or any Google Font): "Just attach `design-system/` — no font files needed."
+- **If the brand uses a licensed display font**: "Attach the `.woff2`/`.otf` files for {{FONT_NAME}} along with `design-system/`, so Claude Design can render it instead of falling back to a substitute."
 
 ## The final delivery message
 
 When you hand back, structure your reply like this:
 
-```
+````
 Done. Here's what's in [project-root]/design-system/:
 
 [Brief summary of what was produced, with a file count.]
@@ -105,19 +117,27 @@ Done. Here's what's in [project-root]/design-system/:
 [A caveat or two the user should know — e.g. "the logo uses a {{motif}}
 motif; if you want alternatives I can generate 3–5 more directions."]
 
-## Company name and blurb (paste into field 1)
+## Load it into Claude Design
+
+1. Start a new chat in Claude.
+2. Attach the `design-system/` folder. [Font-file line — "no font files
+   needed" or "also attach the {{FONT_NAME}} files".]
+3. Paste the message below and send it.
+4. Check the design system Claude builds: colors, type and logo should match
+   `tokens/` and `logo/`. Then ask it for one real asset (e.g. a landing-page
+   hero) as a test. On a team plan, publish it so teammates design from the
+   same system.
 
 ```
+Build our design system from the attached design-system/ folder.
+
 {{THE_GENERATED_BLURB}}
-```
 
-## Any other notes? (paste into the last field)
-
-```
 {{THE_GENERATED_NOTES}}
 ```
 
-[Line about font files — Google-font-safe or needs-upload.]
-```
+[Only if they're still on the standalone claude.ai/design before Dec 14, 2026:
+the blurb paragraph goes in the company-blurb field, the rest in the notes field.]
+````
 
-Copy this structure exactly — it's what the user expects and it matches what worked in the reference build.
+Keep this structure — it's what the user expects, and the content of the two blocks is what worked in the reference build.

@@ -1,6 +1,6 @@
 ---
 name: design-system-creator
-description: Produces a complete, Claude-Design-compatible design system folder for any brand — ready to upload to Claude Design's "Set up your design system" flow and use across every future asset (websites, landing pages, pitch decks, Instagram/LinkedIn carousels, infographics, emails, ads). Handles two paths — building a brand from scratch (research → synthesis → full system) or extracting the design system from an existing business's shipped assets (website scrape, logos, fonts, past creatives). Use whenever the user wants to stand up a design system from zero, codify a brand they already run but never formalized, set up tokens/typography/color/voice guidelines, build reusable brand assets, or feed a brand kit into Claude Design / Claude Skills / any LLM-assisted asset-creation pipeline. Trigger even if the user says "brand kit," "brand guidelines," "style guide," "brand book," "design language," or "set up my brand for AI" — those are all in scope.
+description: Produces a complete, Claude-Design-compatible design system folder for any brand — ready to load into Claude Design (as a design system built from a Claude chat) and use across every future asset (websites, landing pages, pitch decks, Instagram/LinkedIn carousels, infographics, emails, ads). Handles two paths — building a brand from scratch (research → synthesis → full system) or extracting the design system from an existing business's shipped assets (website scrape, logos, fonts, past creatives). Use whenever the user wants to stand up a design system from zero, codify a brand they already run but never formalized, set up tokens/typography/color/voice guidelines, build reusable brand assets, or feed a brand kit into Claude Design / Claude Skills / any LLM-assisted asset-creation pipeline. Trigger even if the user says "brand kit," "brand guidelines," "style guide," "brand book," "design language," or "set up my brand for AI" — those are all in scope.
 ---
 
 # Design System Creator
@@ -9,7 +9,7 @@ This skill produces a complete, portable **design system folder** — the kind a
 
 The final output is a folder that can be:
 
-- uploaded directly to **Claude Design's "Set up your design system"** flow,
+- attached to a Claude chat and turned into a **Claude Design design system** (see [references/claude-design-form.md](references/claude-design-form.md)),
 - fed as context to any LLM that produces brand assets,
 - referenced by a design team as a living style guide.
 
@@ -18,7 +18,7 @@ The final output is a folder that can be:
 This skill is built on the assumption that extraction and research happen against **real scraped data**, not invented content. Before asking discovery questions or generating anything, verify the three tools this skill depends on are installed and working:
 
 - **Firecrawl CLI** (`firecrawl search`, `firecrawl scrape --format markdown,branding --full-page-screenshot`) — required in both branches. Needs an API key.
-- **extract-design-system** skill (`npx extract-design-system <url>`) — used in Branch B for independent CSS-computed tokens.
+- **extract-design-system** CLI (`npx extract-design-system <url>`) — used in Branch B for independent CSS-computed tokens.
 - **Playwright Chromium** — used by extract-design-system and by the bundled [scripts/render.mjs](scripts/render.mjs) to render SVG logos and templates to raster.
 
 Run the diagnostic in [references/setup.md](references/setup.md) and react:
@@ -160,7 +160,7 @@ Full workflow in [references/branch-a-fresh.md](references/branch-a-fresh.md). S
 3. **Synthesize.** Write a `research/synthesis-and-direction.md` doc: what the category looks like (color/type/radius patterns), where this brand should break from the pack, and a concrete proposed direction with specific hex values, type pair, spacing/radius choices, motion rules, imagery direction, and voice principles. End with **the five sign-off questions** (color, typography, logo direction, name confirmation, component scope).
 4. **Wait for sign-off.** Do not start generating the design system until the user confirms color + typography + logo + name at minimum.
 5. **Generate.** Produce every file in the tree above using the templates in [assets/templates/](assets/templates/) and the guidance in [references/output-structure.md](references/output-structure.md). Render the logo SVGs to JPG + PNG via the script at [scripts/render.mjs](scripts/render.mjs). Because this is a fresh brand, all asset templates are synthetic — flag each one to the user and ask if they want to replace any with their own version after the first round of real assets ships.
-6. **Finalize.** Write the "Company name and blurb" + "Any other notes?" text for Claude Design per [references/claude-design-form.md](references/claude-design-form.md). Return the folder path + the form text to the user.
+6. **Finalize.** Write the Claude Design build message (company blurb + notes) per [references/claude-design-form.md](references/claude-design-form.md). Return the folder path + the build message to the user.
 
 ## Branch B — Extract: ingest → reconcile → codify
 
@@ -171,7 +171,7 @@ Full workflow in [references/branch-b-extract.md](references/branch-b-extract.md
 3. **Extract from the live site.** Run `firecrawl scrape <url> --format markdown,branding --full-page-screenshot --wait-for 5000` on the homepage plus 1–2 deeper pages (pricing, about). Run `npx extract-design-system <url>` for independent computed tokens. Save to `brands/<self-slug>/` and `.extract-design-system/`.
 4. **Reconcile.** Compare what the scrapes found against what the user uploaded and what's in the working directory. Cross-check font names, primary colors, logo variants. Note any conflicts — the shipped asset usually wins over a stale website, but confirm with the user.
 5. **Codify.** Generate every file in the tree above. Prefer extracted real values over invented ones. **Copy the user's real shipped assets into `assets/templates/<surface>/`** rather than recreating them as synthetic SVGs (Rule 1). When rendering the logo from the source artifact, render only what's there — no added eyes, no decorative additions (Rule 2). Where extraction is thin (voice, imagery direction, motion principles), interview the user briefly to fill the gap — *do not invent voice rules the brand doesn't already exhibit*.
-6. **Finalize.** Same as Branch A — produce the Claude Design form text and hand it back. In the hand-off summary, list which templates are real (copied from the user's working dir) vs. synthetic (drafted by you and pending approval).
+6. **Finalize.** Same as Branch A — produce the Claude Design build message and hand it back. In the hand-off summary, list which templates are real (copied from the user's working dir) vs. synthetic (drafted by you and pending approval).
 
 ## Tools you have available
 
@@ -184,12 +184,12 @@ If any tool is missing, install it — don't silently skip that step. For instan
 
 ## The final deliverable — always produce this
 
-At the very end, regardless of branch, output two blocks of text the user can paste directly into Claude Design's setup form:
+At the very end, regardless of branch, give the user the steps to load `design-system/` into Claude Design (attach the folder to a new Claude chat) plus a build message to paste with it, made of two blocks:
 
 1. **Company name and blurb** — under 80 words. Name + what the business does + for whom + the list of asset surfaces it will ship.
-2. **Any other notes?** — ~200–300 words. The most critical non-negotiables + specific visual/voice overrides that should bias Claude Design's output. Exact format in [references/claude-design-form.md](references/claude-design-form.md).
+2. **Notes** — ~200–300 words. The most critical non-negotiables + specific visual/voice overrides that should bias Claude Design's output. Exact format in [references/claude-design-form.md](references/claude-design-form.md).
 
-Do not skip this step. It is the hand-off and the whole point of producing the system in the first place.
+Do not skip this step. It is the hand-off and the whole point of producing the system in the first place. (The standalone claude.ai/design app closes December 14, 2026 — the reference file covers users still on it.)
 
 ## Where to go next
 
