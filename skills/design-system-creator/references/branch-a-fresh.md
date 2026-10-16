@@ -178,10 +178,10 @@ The goal is to give the user *something* to ship from on day one, while making i
 
 ## Step 6 — Finalize
 
-Produce the Claude Design form text per [claude-design-form.md](claude-design-form.md). Hand back:
+Produce the Claude Design build message per [claude-design-form.md](claude-design-form.md). Hand back:
 
 1. The `design-system/` folder path.
-2. The two pasteable text blocks (company name + blurb, any other notes).
+2. The steps to load the folder into Claude Design, plus the pasteable build message (company name + blurb, notes).
 3. A short summary of decisions made, so the user has a change log.
 
 ## Common traps on this branch
