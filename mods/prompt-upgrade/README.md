@@ -15,11 +15,11 @@ Answer `y` to add the marketplace, then pick a scope (user scope = every session
 | Command | What it does |
 |---------|-------------|
 | `/better <prompt>` | Upgrade one prompt |
-| `/better on` | Ask "Upgrade?" every time you press Enter (default) |
-| `/better off` | Send prompts straight through; `/better <prompt>` still works |
+| `/better on` | Ask "Upgrade?" every time you press Enter |
+| `/better off` | Send prompts straight through (default); `/better <prompt>` still works |
 | `/better history` | Reopen your last upgrades |
 
-- Start a prompt with `>` to skip the question and send it as typed.
+- With auto on, start a prompt with `>` to skip the question and send it as typed.
 - Cancel (or closing the pane) puts your original words back in the prompt box.
 - If anything fails, your prompt goes through as typed.
 

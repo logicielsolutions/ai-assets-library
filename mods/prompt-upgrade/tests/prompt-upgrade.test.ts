@@ -83,8 +83,10 @@ function rig(
   return state
 }
 
-async function start($: Engine) {
+// Auto is off by default; most tests cover the Enter-time flow, so they switch it on.
+async function start($: Engine, { auto = true }: { auto?: boolean } = {}) {
   await $.session.start({ cwd: '/tmp', surface: 'terminal', isInteractive: true })
+  if (auto) await better($, 'on')
 }
 
 function typed(text: string, extra: Partial<PromptSubmitInput> = {}): PromptSubmitInput {
@@ -337,6 +339,16 @@ describe('the prompt box after an upgrade', () => {
 })
 
 describe('the on and off switch', () => {
+  test('off by default: prompts go straight through until /better on', async ($, on) => {
+    const r = rig(on, [QUESTIONS])
+    await start($, { auto: false })
+
+    await $.prompt.submit(typed(ROUGH))
+    expect(r.sent.map(s => s.text)).toEqual([ROUGH])
+    expect(r.askedFirst).toBe(0)
+    expect(r.opened).toHaveLength(0)
+  })
+
   test('/better off lets prompts through, /better on takes them again', async ($, on) => {
     const r = rig(on, [QUESTIONS])
     await start($)

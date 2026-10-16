@@ -53,7 +53,7 @@ const GREEN = '#3DD68C'
 const AMBER = '#E3B341'
 const DARK = '#0D1117'
 
-const autoAtom = atom({ plugin: 'prompt-upgrade', key: 'auto' } as const, true)
+const autoAtom = atom({ plugin: 'prompt-upgrade', key: 'auto' } as const, false)
 const flowAtom = atom({ plugin: 'prompt-upgrade', key: 'flow' } as const, null)
 const historyAtom = atom({ plugin: 'prompt-upgrade', key: 'history' } as const, [])
 
