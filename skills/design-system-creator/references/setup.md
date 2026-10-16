@@ -38,14 +38,9 @@ The `--browser` flag triggers the sign-in dance. If the user already has a key, 
 npx -y firecrawl-cli@latest init --all -k fc-YOUR_KEY_HERE
 ```
 
-After that, install the extract-design-system skill into the project's `.claude/skills/` and run Playwright's Chromium installer:
+extract-design-system needs no install step — it's an npm CLI that `npx -y extract-design-system <url>` fetches on first use (Node 20+). It does need Playwright's Chromium, so run the one-time installer:
 
 ```bash
-# From the project root
-mkdir -p .claude/skills && \
-  git clone https://github.com/arvindrk/extract-design-system .claude/skills/extract-design-system 2>/dev/null || true
-# or if the skill is distributed another way, follow that channel's install steps
-
 # One-time Chromium install for Playwright
 npx playwright install chromium
 ```
@@ -67,7 +62,7 @@ npm install playwright
 firecrawl --status
 ```
 
-Expected output includes `Authenticated via stored credentials` and a credit count (typically 500 on a new free account).
+Expected output includes an `Authenticated via …` line and a credit count (the free plan gives 1,000 credits a month).
 
 If the command returns "not found": Firecrawl CLI isn't installed. Run the one-command setup above.
 
@@ -78,12 +73,12 @@ If the credit count is `0`: the account is out of credits. Warn the user. Each s
 ### extract-design-system
 
 ```bash
-ls .claude/skills/extract-design-system/SKILL.md
+npm view extract-design-system version
 ```
 
-If it exists: the skill is present. You can call `npx -y extract-design-system <url>` to invoke it.
+If it prints a version: npm can reach the package, and `npx -y extract-design-system <url>` will fetch and run it. Add `--slow` for JavaScript-heavy sites that time out.
 
-If it doesn't exist: offer to fetch and install it. The skill is small (a SKILL.md + references/), so the install is instant.
+If it fails: npm is missing or offline. Check `node --version` (needs 20+) and the network before going further.
 
 ### Playwright Chromium
 
@@ -108,9 +103,9 @@ On macOS, you should see a `chromium-<build>` directory. If empty, run `npx play
 At the top of Branch A or B, before asking any discovery questions, run this shell pipeline and react to the output:
 
 ```bash
-echo "=== Firecrawl ==="; firecrawl --status 2>&1 | head -5 || echo "FIRECRAWL_MISSING"
-echo "=== extract-design-system ==="; test -f .claude/skills/extract-design-system/SKILL.md && echo "OK" || echo "EDS_MISSING"
-echo "=== Playwright / Chromium ==="; npx -y playwright --version 2>&1 | head -1 || echo "PLAYWRIGHT_MISSING"
+echo "=== Firecrawl ==="; command -v firecrawl >/dev/null && firecrawl --status 2>&1 | head -5 || echo "FIRECRAWL_MISSING"
+echo "=== extract-design-system ==="; npm view extract-design-system version >/dev/null 2>&1 && echo "OK (runs via npx)" || echo "EDS_MISSING"
+echo "=== Playwright / Chromium ==="; npx --no-install playwright --version 2>/dev/null | grep . || echo "PLAYWRIGHT_MISSING"
 ```
 
 If anything reports `MISSING`, pause the workflow and walk the user through the install before continuing. Don't proceed with invented data.
@@ -129,13 +124,11 @@ Match your instructions to what they're missing. Don't dump the whole setup on t
 > npx -y firecrawl-cli@latest init --all --browser
 > ```
 >
-> It'll open your browser to sign up (free — 500 scrapes/month). Come back when you see "Authenticated" and "500 / 500 credits."
+> It'll open your browser to sign up (free — 1,000 credits a month, about one per page scraped). Come back when `firecrawl --status` shows "Authenticated" and a credit count.
 
 ### extract-design-system missing
 
-> I need the extract-design-system skill for computing real CSS tokens (colors/fonts/spacing) from live sites. It installs into this project's `.claude/skills/`. Let me install it:
->
-> [Then install it programmatically and confirm.]
+> I need extract-design-system to read real CSS tokens (colors/fonts/spacing) from live sites. It runs through `npx`, so there's nothing to install — but npm couldn't reach it. Can you check that Node 20+ is installed (`node --version`) and that you're online?
 
 ### Playwright Chromium missing
 
@@ -154,7 +147,7 @@ Match your instructions to what they're missing. Don't dump the whole setup on t
 
 Strip the jargon and tell them the human version when they ask:
 
-- **Firecrawl** — "Scrapes websites cleanly. We'll use it to read the competitor sites you mention, or your own website if we're extracting an existing brand. Free account, 500 scrapes/month."
+- **Firecrawl** — "Scrapes websites cleanly. We'll use it to read the competitor sites you mention, or your own website if we're extracting an existing brand. Free account, 1,000 credits a month — roughly one per page."
 - **extract-design-system** — "A small helper that visits a website and reads the real CSS to find exact colors, fonts, and spacing. Complementary to Firecrawl."
 - **Playwright Chromium** — "A headless browser. We use it to render your new logo into JPG and PNG, and to verify the extract-design-system tool works. One-time install."
 
