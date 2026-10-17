@@ -14,6 +14,11 @@
       "name": "git-status-line",
       "source": "./mods/git-status-line",
       "description": "Git branch and changed-file count in the status line."
+    },
+    {
+      "name": "prompt-upgrade",
+      "source": "./mods/prompt-upgrade",
+      "description": "/better: upgrade a rough prompt with quick questions and a side-by-side rewrite before it's sent."
     }
   ]
 }

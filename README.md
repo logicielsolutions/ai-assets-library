@@ -29,6 +29,7 @@ Mods change Claude Code itself: status-line entries, panes, toasts, slash comman
 | Mod | What it does | Install |
 |-----|-------------|---------|
 | [`git-status-line`](mods/git-status-line/) | Shows the current git branch and changed-file count in the status line, refreshed after every turn | `/plugin install git-status-line --marketplace logicielsolutions/ai-assets-library` |
+| [`prompt-upgrade`](mods/prompt-upgrade/) | `/better <prompt>` asks a few quick questions, rewrites your prompt, and shows both side by side; nothing is sent until you press Run | `/plugin install prompt-upgrade --marketplace logicielsolutions/ai-assets-library` |
 
 ---
 
