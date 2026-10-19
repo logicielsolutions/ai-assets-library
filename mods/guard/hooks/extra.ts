@@ -14,7 +14,27 @@ export const STRUCTURED_ENTITIES = [
 ]
 export const NAME_ENTITIES = ['PERSON', 'LOCATION']
 
-export type AnalyzerHit = { entity_type: string; start: number; end: number; score: number }
+/**
+ * Presidio scores a plain phone number at exactly 0.4 and PAN at 0.45, so 0.4 is the highest
+ * cutoff that still catches every item in the sample. Going lower only adds weak matches.
+ */
+export const DEFAULT_MIN_SCORE = 0.4
+
+/** The configured cutoff, or the default when it is blank or not a number. */
+export const parseMinScore = (raw: unknown): number => {
+  const n = typeof raw === 'string' && raw.trim() === '' ? NaN : Number(raw ?? DEFAULT_MIN_SCORE)
+  return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : DEFAULT_MIN_SCORE
+}
+
+/** A warning when the cutoff is far enough from the default to change what is caught. */
+export const minScoreWarning = (minScore: number): string | null =>
+  minScore > DEFAULT_MIN_SCORE
+    ? `Above ${DEFAULT_MIN_SCORE}, lower-confidence items such as phone numbers, PAN and IP addresses are missed.`
+    : minScore < 0.3
+      ? 'Below 0.3, expect more false alarms.'
+      : null
+
+export type AnalyzerHit ={ entity_type: string; start: number; end: number; score: number }
 
 export const entityLabel = (entity: string): string => entity.toLowerCase().replace(/_/g, '-')
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { findSecrets } from './detect'
-import { SAMPLE, compareRows, covers, entityLabel, fromAnalyzer, lastLines, pythonOk, setupSteps, statusText, STRUCTURED_ENTITIES } from './extra'
+import { DEFAULT_MIN_SCORE, SAMPLE, compareRows, covers, entityLabel, fromAnalyzer, lastLines, minScoreWarning, parseMinScore, pythonOk, setupSteps, statusText, STRUCTURED_ENTITIES } from './extra'
 
 describe('extra security helpers', () => {
   test('entityLabel', () => expect(entityLabel('EMAIL_ADDRESS')).toBe('email-address'))
@@ -58,4 +58,21 @@ describe('extra security helpers', () => {
   })
 
   test('lastLines', () => expect(lastLines('a\n\nb  \nc\n', 2)).toEqual(['b', 'c']))
+
+  test('parseMinScore falls back to the default when blank or not a number, and clamps', () => {
+    expect(parseMinScore(undefined)).toBe(DEFAULT_MIN_SCORE)
+    expect(parseMinScore('')).toBe(DEFAULT_MIN_SCORE)
+    expect(parseMinScore('abc')).toBe(DEFAULT_MIN_SCORE)
+    expect(parseMinScore('0.3')).toBe(0.3)
+    expect(parseMinScore(1)).toBe(1)
+    expect(parseMinScore(7)).toBe(1)
+    expect(parseMinScore(-1)).toBe(0)
+  })
+
+  test('minScoreWarning only speaks up away from the suggested range', () => {
+    expect(minScoreWarning(0.4)).toBeNull()
+    expect(minScoreWarning(0.3)).toBeNull()
+    expect(minScoreWarning(1)).toContain('phone numbers')
+    expect(minScoreWarning(0.1)).toContain('false alarms')
+  })
 })

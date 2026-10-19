@@ -1,6 +1,6 @@
 {
   "name": "guard",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "guard: when you paste a secret into a prompt it asks whether to redact it, send it as typed or let you edit; redacts secrets in tool output; asks before a secret is written to a file or run in a command. Optional extra security (Presidio) adds email, phone, card, Aadhaar, PAN and more, enabled from /guard setup. /guard shows what was caught.",
   "author": {
     "name": "Gurjeet Singh",
@@ -9,7 +9,7 @@
   "userConfig": {
     "mode": {
       "type": "string",
-      "title": "When a secret is in your prompt",
+      "title": "When a secret is in your prompt (suggested: ask)",
       "description": "ask: ask you each time (redact and send, send as typed, or don't send and edit). redact: replace it before sending without asking. warn: send as typed but warn you.",
       "options": [
         "ask",
@@ -20,26 +20,26 @@
     },
     "scanEnv": {
       "type": "boolean",
-      "title": "Learn secrets from the repo's .env files",
+      "title": "Learn secrets from the repo's .env files (suggested: true)",
       "description": "Values found in .env files are caught anywhere they appear.",
       "default": true
     },
     "guardActions": {
       "type": "boolean",
-      "title": "Ask before a secret is written to a file or run in a command",
+      "title": "Ask before a secret is written to a file or run in a command (suggested: true)",
       "description": "Applies to Write, Edit and Bash. Writes to .env files are always allowed.",
       "default": true
     },
     "extraNames": {
       "type": "boolean",
-      "title": "Extra security: also detect names and places",
+      "title": "Extra security: also detect names and places (suggested: false; true adds false alarms)",
       "description": "Noisier: may flag product and company names. Only applies when extra security is on.",
       "default": false
     },
     "extraMinScore": {
       "type": "number",
-      "title": "Extra security: minimum confidence (0 to 1)",
-      "description": "Lower catches more and flags more false alarms.",
+      "title": "Extra security: minimum confidence, 0 to 1 (suggested: 0.4; lower = more false alarms)",
+      "description": "0.4 catches every item in the /guard setup sample. Lower catches more and flags more false alarms; above 0.4 misses phone numbers, then PAN and IP addresses. Blank means 0.4.",
       "default": 0.4
     }
   },

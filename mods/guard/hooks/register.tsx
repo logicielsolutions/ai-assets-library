@@ -6,6 +6,7 @@ import type { CompareRow as Row, ExtraStatus } from '../types'
 import { PROMPT_CHOICES, actionFor, findSecrets, isEnvFile, isSecretHome, lineOf, mask, newRegistry, parseEnv, promptQuestion, redact, settle } from './detect'
 import type { Finding, PromptAction, Registry } from './detect'
 import {
+  DEFAULT_MIN_SCORE,
   IDLE_MINUTES,
   NAME,
   NAME_ENTITIES,
@@ -15,6 +16,8 @@ import {
   compareRows,
   fromAnalyzer,
   lastLines,
+  minScoreWarning,
+  parseMinScore,
   pythonOk,
   setupSteps,
   statusText,
@@ -286,7 +289,7 @@ export const register: Register = (on, options) => {
     loadedAt: 0,
     extra: 'off',
     wantsNames: options.extraNames === true,
-    minScore: Math.min(1, Math.max(0, Number(options.extraMinScore ?? 0.4))),
+    minScore: parseMinScore(options.extraMinScore),
     hasWarnedDown: false,
   }
 
@@ -467,6 +470,8 @@ export const register: Register = (on, options) => {
           </Text>
         ))}
         <Text dimColor>{extra === 'on' ? 'Green rows are caught only with extra security.' : 'Turn on extra security to fill in the last column.'} Try your own text: /guard test your text here</Text>
+        <Text dimColor>Minimum confidence: {state.minScore} (suggested {DEFAULT_MIN_SCORE}; lower catches more and flags more false alarms). Change it in /plugin → Installed → guard → Configure, then restart.</Text>
+        {minScoreWarning(state.minScore) !== null && <Text color="yellow">⚠ {minScoreWarning(state.minScore)}</Text>}
       </Box>
     )
   })

@@ -76,7 +76,7 @@ Under `/config` (or `pluginConfigs.guard.options` in settings):
 | `scanEnv` | on | Learn values from the repo's `.env` files and catch them anywhere |
 | `guardActions` | on | Ask before a secret is written by `Write`/`Edit` or run by `Bash` |
 | `extraNames` | off | Extra security also flags names and places (noisier) |
-| `extraMinScore` | `0.4` | Extra security's minimum confidence; lower catches more |
+| `extraMinScore` | `0.4` | Extra security's minimum confidence. 0.4 catches every item in the `/guard setup` sample; lower catches more and flags more false alarms, above 0.4 misses phone numbers, then PAN and IP. Blank means 0.4. `/guard setup` shows the value in use and warns when it is off the suggested range. |
 
 ## Develop
 
