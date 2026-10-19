@@ -156,3 +156,24 @@ export const isEnvFile = (name: string): boolean =>
 
 /** Files where secrets belong; writes there are not flagged. */
 export const isSecretHome = (path: string): boolean => /(^|\/)\.env(\..*)?$/.test(path)
+
+// What to do with a secret in the user's prompt. `ask` mode puts the choice
+// to the user; the labels are the dialog's options, safest first.
+export type PromptAction = 'redact' | 'send' | 'edit'
+
+export const PROMPT_CHOICES = {
+  redact: 'Redact and send',
+  send: 'Send as typed',
+  edit: "Don't send, let me edit",
+} as const satisfies Record<PromptAction, string>
+
+export const promptQuestion = (found: readonly Finding[]): string => {
+  const shown = found.slice(0, 3).map(f => `${f.label} ${mask(f.value)}`).join(', ')
+  const more = found.length > 3 ? ` and ${found.length - 3} more` : ''
+  return `Your prompt has a possible secret (${shown}${more}). Redact it before sending?`
+}
+
+// The dialog's answer as an action. Anything that is not one of the labels
+// (text typed under "Other") counts as the safe choice.
+export const actionFor = (answer: string): PromptAction =>
+  answer === PROMPT_CHOICES.send ? 'send' : answer === PROMPT_CHOICES.edit ? 'edit' : 'redact'

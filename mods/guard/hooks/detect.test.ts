@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { entropy, findSecrets, isEnvFile, isSecretHome, lineOf, looksSecret, mask, newRegistry, parseEnv, redact } from './detect'
+import { PROMPT_CHOICES, actionFor, entropy, findSecrets, isEnvFile, isSecretHome, lineOf, looksSecret, mask, newRegistry, parseEnv, promptQuestion, redact } from './detect'
 
 // Fake values in real formats; none of these are live credentials.
 const AWS = 'AKIAIOSFODNN7EXAMPLE'
@@ -114,5 +114,24 @@ describe('spoken-style credentials', () => {
       'secret is in the vault',
       'token is valid.',
     ]) expect(labels(t)).toEqual([])
+  })
+})
+
+describe('asking about a secret in the prompt', () => {
+  test('the question names what was found without showing the value', () => {
+    const q = promptQuestion(findSecrets(`use ${AWS} please`))
+    expect(q).toBe('Your prompt has a possible secret (aws-access-key AKI…(20 chars)). Redact it before sending?')
+    expect(q).not.toContain(AWS)
+  })
+  test('more than three findings are counted, not listed', () => {
+    const found = findSecrets(`${AWS} ${GH} ${SLACK} ${STRIPE} ${ANTHROPIC}`)
+    expect(promptQuestion(found)).toContain('and 2 more')
+  })
+  test('each label maps to its action; anything else is the safe choice', () => {
+    expect(actionFor(PROMPT_CHOICES.redact)).toBe('redact')
+    expect(actionFor(PROMPT_CHOICES.send)).toBe('send')
+    expect(actionFor(PROMPT_CHOICES.edit)).toBe('edit')
+    expect(actionFor('just do whatever')).toBe('redact')
+    expect(actionFor('')).toBe('redact')
   })
 })

@@ -1,7 +1,7 @@
 {
   "name": "guard",
-  "version": "0.3.4",
-  "description": "guard: redacts secrets from your prompts and tool output, warns you when you paste one, asks before a secret is written to a file or run in a command. Optional extra security (Presidio) adds email, phone, card, Aadhaar, PAN and more, enabled from /guard setup. /guard shows what was caught.",
+  "version": "0.4.0",
+  "description": "guard: when you paste a secret into a prompt it asks whether to redact it, send it as typed or let you edit; redacts secrets in tool output; asks before a secret is written to a file or run in a command. Optional extra security (Presidio) adds email, phone, card, Aadhaar, PAN and more, enabled from /guard setup. /guard shows what was caught.",
   "author": {
     "name": "Gurjeet Singh",
     "email": "gurjeet@logiciel.io"
@@ -10,12 +10,13 @@
     "mode": {
       "type": "string",
       "title": "When a secret is in your prompt",
-      "description": "redact: replace it before sending and warn you. warn: send as typed but warn you.",
+      "description": "ask: ask you each time (redact and send, send as typed, or don't send and edit). redact: replace it before sending without asking. warn: send as typed but warn you.",
       "options": [
+        "ask",
         "redact",
         "warn"
       ],
-      "default": "redact"
+      "default": "ask"
     },
     "scanEnv": {
       "type": "boolean",
