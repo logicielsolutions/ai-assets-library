@@ -24,6 +24,11 @@
       "name": "model-switcher",
       "source": "./mods/model-switcher",
       "description": "Switch model and effort from a band above the prompt: one click or keypress, no slash commands."
+    },
+    {
+      "name": "guard",
+      "source": "./mods/guard",
+      "description": "Redacts secrets from your prompts and tool output, warns when you paste one, and asks before a secret is written or run; optional local Presidio for PII."
     }
   ]
 }
