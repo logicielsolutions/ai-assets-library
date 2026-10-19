@@ -1,0 +1,36 @@
+{
+  "name": "model-switcher",
+  "version": "0.1.0",
+  "description": "A band above the prompt for switching model and effort with one click or keypress; the model list comes from Claude Code, so it stays current.",
+  "author": {
+    "name": "Kumar Gaurav",
+    "email": "kumargaurav@logiciel.io"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "models": {
+      "type": "string",
+      "title": "Model chips",
+      "description": "Comma-separated aliases or full model ids to show, in order. \"all\" shows every model Claude Code offers.",
+      "default": "haiku, sonnet, opus, fable"
+    },
+    "presets": {
+      "type": "string",
+      "title": "Presets",
+      "description": "Comma-separated Name=model/effort pairs; empty hides them.",
+      "default": "Quick=haiku/low, Build=sonnet/high, Deep=opus/max"
+    },
+    "subagents": {
+      "type": "boolean",
+      "title": "Effort applies to subagents",
+      "description": "Off: the effort pick changes the main conversation only.",
+      "default": false
+    },
+    "rememberEffort": {
+      "type": "boolean",
+      "title": "Remember effort across sessions",
+      "description": "The model is always remembered, as /model does.",
+      "default": true
+    }
+  }
+}

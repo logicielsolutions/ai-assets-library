@@ -30,6 +30,7 @@ Mods change Claude Code itself: status-line entries, panes, toasts, slash comman
 |-----|-------------|---------|
 | [`git-status-line`](mods/git-status-line/) | Shows the current git branch and changed-file count in the status line, refreshed after every turn | `/plugin install git-status-line --marketplace logicielsolutions/ai-assets-library` |
 | [`prompt-upgrade`](mods/prompt-upgrade/) | `/better <prompt>` asks a few quick questions, rewrites your prompt, and shows both side by side; nothing is sent until you press Run | `/plugin install prompt-upgrade --marketplace logicielsolutions/ai-assets-library` |
+| [`model-switcher`](mods/model-switcher/) | A band above the prompt for switching model and effort with one click or keypress; the model list comes from Claude Code, so it stays current | `/plugin install model-switcher --marketplace logicielsolutions/ai-assets-library` |
 
 ---
 

@@ -19,6 +19,11 @@
       "name": "prompt-upgrade",
       "source": "./mods/prompt-upgrade",
       "description": "/better: upgrade a rough prompt with quick questions and a side-by-side rewrite before it's sent."
+    },
+    {
+      "name": "model-switcher",
+      "source": "./mods/model-switcher",
+      "description": "Switch model and effort from a band above the prompt: one click or keypress, no slash commands."
     }
   ]
 }
