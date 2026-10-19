@@ -1,6 +1,6 @@
 # guard
 
-A Claude Code mod that keeps secrets out of the conversation. If you paste an API key, token or password into a prompt, guard swaps it for a `[REDACTED:…]` tag before the prompt is sent and warns you. It also hides secrets in what tools read or print, and asks before Claude writes a secret to a file or runs a command containing one.
+A Claude Code mod that keeps secrets out of the conversation. If you paste an API key, token or password into a prompt, guard stops and asks what to do before anything is sent: redact it, send it as typed, or hand the prompt back so you can edit it. It also hides secrets in what tools read or print, and asks before Claude writes a secret to a file or runs a command containing one.
 
 ```
 🛡 guard on · extra security off (/guard setup)
@@ -18,13 +18,29 @@ The status line always shows whether guard is on and how many secrets it caught.
 
 | Where | What guard does |
 |-------|-----------------|
-| Your prompt | Replaces the secret with a tag such as `[REDACTED:aws-access-key #1]` before sending, shows a toast, and tells Claude not to ask for the value again. Only the value is removed, so `my api key is …` keeps the rest of the sentence. |
+| Your prompt | Asks before sending (see below). On **Redact and send** the secret becomes a tag such as `[REDACTED:aws-access-key #1]`, and Claude is told not to ask for the value again. Only the value is removed, so `my api key is …` keeps the rest of the sentence. |
 | Tool output (`Bash`, `Read`, `Grep`) | Redacts secrets in what the tool returned before the model sees it. |
 | `Write`, `Edit`, `Bash` | Asks **Allow it / Block it** when the content or command contains a secret. Writes to `.env` files are always allowed. |
 
+**When a secret is in your prompt**, guard shows a dialog before anything is sent:
+
+```
+Your prompt has a possible secret (aws-access-key AKI…(20 chars)). Redact it before sending?
+  1. Redact and send
+  2. Send as typed
+  3. Don't send, let me edit
+```
+
+- **Redact and send:** the secret is replaced with a tag; the rest of the prompt goes as typed.
+- **Send as typed:** for a test or throw-away value; guard still logs it in `/guard`.
+- **Don't send, let me edit:** nothing is sent and your prompt goes back into the prompt box.
+- **Esc** works like "Don't send". Prompts nobody can answer for (`claude -p`, other plugins) are redacted without asking.
+
+Prefer no dialog? Set `mode` to `redact` (always redact) or `warn` (always send, with a warning).
+
 **Detected by default:** AWS keys, GitHub, Slack, Stripe and Anthropic tokens, JWTs, private keys (PEM), passwords in URLs, bearer tokens, `password=` / `API_KEY=` style assignments with a secret-looking value, spoken-style secrets ("my password is …"), and any value from the repo's `.env` files wherever it appears.
 
-guard redacts and warns; it does not stop a prompt from being sent. If something real was caught, rotate it.
+If something real was caught, rotate it anyway: guard protects this conversation, not your clipboard or shell history.
 
 ## Commands
 
@@ -56,7 +72,7 @@ Under `/config` (or `pluginConfigs.guard.options` in settings):
 
 | Setting | Default | What it does |
 |---------|---------|--------------|
-| `mode` | `redact` | `redact`: replace the secret before sending. `warn`: send as typed, but warn |
+| `mode` | `ask` | `ask`: ask each time (redact, send as typed, or edit). `redact`: always replace the secret before sending. `warn`: send as typed, but warn |
 | `scanEnv` | on | Learn values from the repo's `.env` files and catch them anywhere |
 | `guardActions` | on | Ask before a secret is written by `Write`/`Edit` or run by `Bash` |
 | `extraNames` | off | Extra security also flags names and places (noisier) |

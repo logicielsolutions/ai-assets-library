@@ -3,8 +3,8 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { CompareRow as Row, ExtraStatus } from '../types'
 
-import { findSecrets, isEnvFile, isSecretHome, lineOf, mask, newRegistry, parseEnv, redact, settle } from './detect'
-import type { Finding, Registry } from './detect'
+import { PROMPT_CHOICES, actionFor, findSecrets, isEnvFile, isSecretHome, lineOf, mask, newRegistry, parseEnv, promptQuestion, redact, settle } from './detect'
+import type { Finding, PromptAction, Registry } from './detect'
 import {
   IDLE_MINUTES,
   NAME,
@@ -274,7 +274,7 @@ async function askBeforeAction($: EngineInterface, state: State, what: string, t
 }
 
 export const register: Register = (on, options) => {
-  const isRedact = options.mode !== 'warn'
+  const mode = options.mode === 'redact' || options.mode === 'warn' ? options.mode : 'ask'
   const wantsEnv = options.scanEnv !== false
   const guardsActions = options.guardActions !== false
   const state: State = {
@@ -331,15 +331,42 @@ export const register: Register = (on, options) => {
     note(state, 'your prompt', found)
     showStatus($, state)
     const what = describeFindings(found)
+
+    // Typed by a person who can answer: ask in `ask` mode. Anything else
+    // (a -p run, a plugin's prompt) follows the safe default.
+    const canAsk = e.origin.kind === 'composer' || e.origin.kind === 'bridge'
+    let action: PromptAction = mode === 'warn' ? 'send' : 'redact'
+    if (mode === 'ask' && canAsk) {
+      try {
+        action = actionFor(
+          await $.ui.ask(promptQuestion(found), {
+            header: 'Secret',
+            options: [PROMPT_CHOICES.redact, PROMPT_CHOICES.send, PROMPT_CHOICES.edit],
+          }),
+        )
+      } catch {
+        action = 'edit' // dismissed: send nothing, give the text back
+      }
+    }
+
+    if (action === 'edit') {
+      const { isFilled } = await $.prompt.fill({ text: e.text }).catch(() => ({ isFilled: false }))
+      if (isFilled) {
+        $.ui.log(`${NAME}: not sent. Your prompt is back in the box; replace the secret (${what}) and send again.`)
+        return { drop: `${NAME}: not sent, your prompt contains a secret (${what}). It is back in the prompt box to edit.` }
+      }
+      action = 'redact' // no prompt box to give it back to: don't lose the text
+    }
+
     $.ui.toast(
-      isRedact
+      action === 'redact'
         ? `⚠ You pasted a secret (${what}). It was removed before sending. If it is real, rotate it.`
         : `⚠ Your prompt contains a secret (${what}) and was sent as typed. If it is real, rotate it.`,
       { timeoutMs: 12000 },
     )
-    $.ui.log(`⚠ ${NAME}: ${found.length} secret(s) in your prompt (${what}). ${isRedact ? 'Redacted before sending.' : 'Sent as typed.'}`)
+    $.ui.log(`⚠ ${NAME}: ${found.length} secret(s) in your prompt (${what}). ${action === 'redact' ? 'Redacted before sending.' : 'Sent as typed.'}`)
 
-    if (!isRedact) return next(e)
+    if (action === 'send') return next(e)
     return next({
       ...e,
       text: redact(e.text, found, state.registry),
