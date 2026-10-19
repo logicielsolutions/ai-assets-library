@@ -1,0 +1,46 @@
+{
+  "name": "guard",
+  "version": "0.3.4",
+  "description": "guard: redacts secrets from your prompts and tool output, warns you when you paste one, asks before a secret is written to a file or run in a command. Optional extra security (Presidio) adds email, phone, card, Aadhaar, PAN and more, enabled from /guard setup. /guard shows what was caught.",
+  "author": {
+    "name": "Gurjeet Singh",
+    "email": "gurjeet@logiciel.io"
+  },
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "When a secret is in your prompt",
+      "description": "redact: replace it before sending and warn you. warn: send as typed but warn you.",
+      "options": [
+        "redact",
+        "warn"
+      ],
+      "default": "redact"
+    },
+    "scanEnv": {
+      "type": "boolean",
+      "title": "Learn secrets from the repo's .env files",
+      "description": "Values found in .env files are caught anywhere they appear.",
+      "default": true
+    },
+    "guardActions": {
+      "type": "boolean",
+      "title": "Ask before a secret is written to a file or run in a command",
+      "description": "Applies to Write, Edit and Bash. Writes to .env files are always allowed.",
+      "default": true
+    },
+    "extraNames": {
+      "type": "boolean",
+      "title": "Extra security: also detect names and places",
+      "description": "Noisier: may flag product and company names. Only applies when extra security is on.",
+      "default": false
+    },
+    "extraMinScore": {
+      "type": "number",
+      "title": "Extra security: minimum confidence (0 to 1)",
+      "description": "Lower catches more and flags more false alarms.",
+      "default": 0.4
+    }
+  },
+  "types": "./types/index.d.ts"
+}
