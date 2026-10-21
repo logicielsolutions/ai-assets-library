@@ -32,6 +32,7 @@ Mods change Claude Code itself: status-line entries, panes, toasts, slash comman
 | [`prompt-upgrade`](mods/prompt-upgrade/) | `/better <prompt>` asks a few quick questions, rewrites your prompt, and shows both side by side; nothing is sent until you press Run | `/plugin install prompt-upgrade --marketplace logicielsolutions/ai-assets-library` |
 | [`model-switcher`](mods/model-switcher/) | A band above the prompt for switching model and effort with one click or keypress; the model list comes from Claude Code, so it stays current | `/plugin install model-switcher --marketplace logicielsolutions/ai-assets-library` |
 | [`guard`](mods/guard/) | Asks before a prompt with an API key, token or password is sent (redact it, send as typed, or edit), hides them in tool output, and asks before Claude writes or runs one; `/guard setup` adds optional local PII detection (Presidio) | `/plugin install guard --marketplace logicielsolutions/ai-assets-library` |
+| [`context-bar`](mods/context-bar/) | One line above the prompt with context fill and the live plan, task list or current step; `/progress` opens a pane with tasks, plan and every tool step | `/plugin install context-bar --marketplace logicielsolutions/ai-assets-library` |
 
 ---
 
