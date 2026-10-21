@@ -1,0 +1,10 @@
+{
+  "name": "context-bar",
+  "version": "0.4.0",
+  "description": "One line above the prompt: context fill, and the live plan, task list or current step; an optional Progress pane via /progress",
+  "author": {
+    "name": "Harpreet",
+    "email": "harpreet@logiciel.io"
+  },
+  "types": "./types/index.d.ts"
+}
