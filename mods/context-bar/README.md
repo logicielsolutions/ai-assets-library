@@ -23,7 +23,7 @@ Answer `y` to add the marketplace, then pick a scope (user scope = every session
 
 What the bar shows, after the context fill:
 
-- **plan**: a superpowers plan (`docs/superpowers/plans/*.md`) or a plan-mode plan, with tasks done and the one underway. It's picked up when Claude reads it, or by itself when one in the project was changed in the last two weeks and still has work left.
+- **plan**: a superpowers plan (`docs/superpowers/plans/*.md`) or a plan-mode plan, with tasks done and the one underway. Before the first task it reads `not started`, or `pre-flight` once the plan is being carried out (executing-plans / subagent-driven-development loaded, or plan mode approved). It's picked up when Claude reads it, or by itself when one in the project was changed in the last two weeks and still has work left.
 - **tasks**: the open task list (TodoWrite or TaskCreate/TaskUpdate) when there's no plan.
 - **planning**: while brainstorming, writing a plan or in plan mode.
 - **current step**: otherwise, the tool running now, the step count and the time taken.

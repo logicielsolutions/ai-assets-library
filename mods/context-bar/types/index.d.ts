@@ -61,6 +61,8 @@ declare module 'claude-code' {
       isPlanTouched: boolean
       /** Set while a plan is being made: by which skill or mode, and since when */
       planning: Planning | null
+      /** Set once a plan is being carried out (executing skill loaded or plan mode approved) */
+      isExecuting: boolean
     }
   }
 }

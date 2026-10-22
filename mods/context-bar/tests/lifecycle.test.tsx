@@ -204,10 +204,16 @@ test('superpowers: brainstorm, write the plan, then carry it out', async ($, on)
 
   await $.turn.start({ text: 'go', turnId: 'go' })
   await $.tool.call({ tool: 'Skill', skill: 'superpowers:executing-plans' })
+  // Skill loaded, no task underway yet: checking the plan against the code
+  const preflight = await band($)
+  expect(preflight).toContain('0/2')
+  expect(preflight).toContain('pre-flight')
+  expect(preflight).not.toContain('not started')
   await $.tool.call({ tool: 'TodoWrite', todos: [{ content: 'Config', status: 'in_progress', activeForm: 'Writing config' }] })
   const working = await band($)
   expect(working).toContain('0/2')
   expect(working).not.toContain('not started')
+  expect(working).not.toContain('pre-flight')
   expect(working).not.toContain('planning')
 })
 
