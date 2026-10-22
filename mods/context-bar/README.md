@@ -31,7 +31,7 @@ What the bar shows, after the context fill:
 Notes:
 
 - The context bar turns yellow at 60% and red at 85%, where it suggests `/compact`.
-- A task counts as done when its checkboxes are ticked, when its todo is completed, or when every file it says it creates exists. Progress is remembered across restarts.
+- A task counts as done when its checkboxes are ticked, when its todo is completed, when every file it says it creates exists, or when subagent-driven-development's ledger (`.superpowers/sdd/<plan>/progress.md`) logs it complete. A ledger with nothing complete yet also shows `pre-flight`. Progress is remembered across restarts.
 - A finished plan drops off once a prompt doesn't touch it. `/clear` keeps the project's plan.
 - On terminals narrower than 90 columns the bar stacks on two lines.
 
