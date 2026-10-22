@@ -16,6 +16,7 @@ const todosStartedAt = atom({ plugin: 'context-bar', key: 'todosStartedAt' } as 
 const isPaneClosed = atom({ plugin: 'context-bar', key: 'isPaneClosed' } as const, false)
 const isPlanTouched = atom({ plugin: 'context-bar', key: 'isPlanTouched' } as const, false)
 const planning = atom({ plugin: 'context-bar', key: 'planning' } as const, null as Planning | null)
+const isExecuting = atom({ plugin: 'context-bar', key: 'isExecuting' } as const, false)
 
 const PANE = 'progress'
 
@@ -170,6 +171,7 @@ export const register: Register = on => {
       await update($, context, () => null)
       await update($, plan, () => null)
       await update($, planning, () => null)
+      await update($, isExecuting, () => false)
       await discoverPlan($).catch(() => undefined)
     }
 
@@ -218,8 +220,12 @@ export const register: Register = on => {
       await update($, isPlanTouched, () => true)
     }
     const change = planningChange(e.tool, input as Record<string, unknown>, ran.deny === undefined && ran.isError !== true)
-    if (change === 'end') await update($, planning, () => null)
-    else if (change !== null) {
+    // Ending planning means carrying the plan out: before its first task, that's pre-flight
+    if (change === 'end') {
+      await update($, planning, () => null)
+      await update($, isExecuting, () => true)
+    } else if (change !== null) {
+      await update($, isExecuting, () => false)
       const t = await $.clock.now()
       // Brainstorming then writing-plans is one planning stretch: keep its start
       await update($, planning, p => ({ method: change.begin, startedAt: p?.startedAt ?? t }))
@@ -458,6 +464,7 @@ export const register: Register = on => {
     const active = await read($, plan)
     const list = await read($, todos)
     const progress = active === null ? null : planProgress(active, list, active.remembered)
+    const executing = await read($, isExecuting)
     const current = await read($, turn)
     const isRunning = current !== null && current.endedAt === undefined
     // Without a plan, a task list shows while it is open or was made this prompt
@@ -495,7 +502,7 @@ export const register: Register = on => {
         {isComplete ? (
           <Text color="success"> ✓ {active!.title}</Text>
         ) : progress.done === 0 && !list.some(t => t.status === 'in_progress') ? (
-          <Text dimColor> · not started · {active!.title}</Text>
+          <Text dimColor> · {executing ? 'pre-flight' : 'not started'} · {active!.title}</Text>
         ) : progress.current !== null ? (
           <Text dimColor> · {progress.current}</Text>
         ) : null}
@@ -554,10 +561,11 @@ export const register: Register = on => {
 
     const workRow = planRow ?? planningRow ?? tasksRow ?? activityRow
 
-    // One row when there is room, stacked on narrow terminals
+    // One row when there is room, stacked on narrow terminals. The blank line
+    // above matches the one the prompt leaves below.
     if (ctx !== null && workRow !== null && isWide) {
       return (
-        <Box flexDirection="row">
+        <Box flexDirection="row" marginTop={1}>
           <Box flexShrink={0}>{ctx}</Box>
           <Text dimColor>  │  </Text>
           {workRow}
@@ -566,7 +574,7 @@ export const register: Register = on => {
     }
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" marginTop={1}>
         {ctx}
         {workRow}
       </Box>
