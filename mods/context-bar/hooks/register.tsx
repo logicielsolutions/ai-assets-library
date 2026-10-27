@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, SessionContextUsage } from 'claude-code'
 
 import type { ContextFill, Plan, Planning, Step, TodoItem, Turn } from '../types'
-import { bar, isFinished, markBuilt, parsePlan, PLAN_DIR, planPathIn, planProgress, projectRoot, shortTokens, taskIdFrom, touchesPlan } from './plan'
+import { bar, isFinished, ledgerDone, ledgerPath, markBuilt, markLedger, parsePlan, PLAN_DIR, planPathIn, planProgress, projectRoot, shortTokens, taskIdFrom, touchesPlan } from './plan'
 import { countDone, describeCall, duration, estimateLeft, keepRecent, methodOf, planningChange } from './progress'
 
 const context = atom({ plugin: 'context-bar', key: 'context' } as const, null as ContextFill | null)
@@ -77,8 +77,9 @@ async function loadPlan($: EngineInterface, path: string): Promise<void> {
     await update($, plan, () => null)
     return
   }
-  const parsed = parsePlan(full, text)
   const root = projectRoot(full) ?? (await $.session.cwd())
+  const ledger = await $.fs.read(ledgerPath(root, full)).catch(() => null)
+  const parsed = ledger === null ? parsePlan(full, text) : markLedger(parsePlan(full, text), ledgerDone(full, ledger))
   const files = [...new Set(parsed.tasks.flatMap(t => t.creates))]
   const present = new Set<string>()
   for (const file of files) {
@@ -214,7 +215,10 @@ export const register: Register = on => {
     const { tool_use_id: _, ...input } = e
     const callText = JSON.stringify(input)
     const path = planPathIn(callText)
+    const before = await read($, plan)
     if (path !== null) await loadPlan($, path)
+    // A ledger line written: show the task done now, not at the end of the turn
+    else if (before !== null && callText.includes('.superpowers/sdd/')) await loadPlan($, before.path)
     const active = await read($, plan)
     if (active !== null && (path !== null || touchesPlan(active, callText))) {
       await update($, isPlanTouched, () => true)
@@ -502,7 +506,7 @@ export const register: Register = on => {
         {isComplete ? (
           <Text color="success"> ✓ {active!.title}</Text>
         ) : progress.done === 0 && !list.some(t => t.status === 'in_progress') ? (
-          <Text dimColor> · {executing ? 'pre-flight' : 'not started'} · {active!.title}</Text>
+          <Text dimColor> · {executing || active!.hasLedger === true ? 'pre-flight' : 'not started'} · {active!.title}</Text>
         ) : progress.current !== null ? (
           <Text dimColor> · {progress.current}</Text>
         ) : null}

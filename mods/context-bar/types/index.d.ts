@@ -1,6 +1,12 @@
 export type ContextFill = { percent: number; tokens: number; window: number }
 
-export type PlanTask = { name: string; isDone: boolean; creates: string[] }
+export type PlanTask = {
+  /** The number in its "Task N" heading ("7a"), or its position for a plan without them */
+  id: string
+  name: string
+  isDone: boolean
+  creates: string[]
+}
 
 export type Plan = {
   path: string
@@ -10,6 +16,8 @@ export type Plan = {
   stepsTotal: number
   /** Tasks done as far as an earlier session got */
   remembered: number
+  /** Whether subagent-driven-development keeps a ledger for this plan: it is being carried out */
+  hasLedger?: boolean
 }
 
 export type TodoItem = {

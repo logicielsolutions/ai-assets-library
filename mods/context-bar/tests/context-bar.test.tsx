@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { markBuilt, parsePlan, planProgress } from '../hooks/plan'
+import { ledgerDone, ledgerPath, markBuilt, markLedger, parsePlan, planProgress } from '../hooks/plan'
 
 const PLAN_PATH = '/work/app/docs/superpowers/plans/2026-10-19-auth.md'
 
@@ -121,6 +121,26 @@ describe('parsePlan', () => {
     expect(plan.tasks.map(t => t.isDone)).toEqual([true, false, false])
     expect([plan.stepsDone, plan.stepsTotal]).toEqual([3, 5])
     expect(planProgress(plan, [])).toEqual({ done: 1, total: 3, current: 'Add RLS policies' })
+  })
+
+  test('tasks a subagent-driven-development ledger marks complete count as done', async () => {
+    const plan = parsePlan(PLAN_PATH, PLAN_TEXT.replaceAll('[x]', '[ ]'))
+    const name = PLAN_PATH.split('/').pop()!
+    expect(ledgerPath('/work/app', PLAN_PATH)).toBe(`/work/app/.superpowers/sdd/${name.replace(/\.md$/, '')}/progress.md`)
+    const ledger = `# SDD ledger — plan: docs/superpowers/plans/${name}
+
+Task 1: implemented (commit 6aba40e), under task review.
+Task 1: fix round 1/5
+Task 1: complete (commits bb894ac..bbec33d, review clean)
+Task 2: implemented (commit 1234567)
+`
+    const done = ledgerDone(PLAN_PATH, ledger)
+    expect([...done]).toEqual(['1'])
+    const marked = markLedger(plan, done)
+    expect(marked.hasLedger).toBe(true)
+    expect(planProgress(marked, [])).toEqual({ done: 1, total: 3, current: 'Add RLS policies' })
+    // Another plan's ledger counts for nothing
+    expect(ledgerDone(PLAN_PATH, ledger.replace(name, 'other-plan.md')).size).toBe(0)
   })
 
   test('completed todos count when the file is not ticked', async () => {

@@ -25,13 +25,14 @@ export function parsePlan(path: string, text: string): Plan {
     .trim()
 
   const tasks: PlanTask[] = []
-  let current: { name: string; checked: number; boxes: number; creates: string[] } | null = null
+  let current: { id: string; name: string; checked: number; boxes: number; creates: string[] } | null = null
   let stepsDone = 0
   let stepsTotal = 0
 
   const close = () => {
     if (current !== null) {
       tasks.push({
+        id: current.id,
         name: current.name,
         isDone: current.boxes > 0 && current.checked === current.boxes,
         creates: current.creates,
@@ -43,7 +44,7 @@ export function parsePlan(path: string, text: string): Plan {
     const heading = TASK_HEADING.exec(line)
     if (heading !== null) {
       close()
-      current = { name: heading[2]!.trim() || `Task ${heading[1]}`, checked: 0, boxes: 0, creates: [] }
+      current = { id: heading[1]!.toLowerCase(), name: heading[2]!.trim() || `Task ${heading[1]}`, checked: 0, boxes: 0, creates: [] }
       continue
     }
     const created = CREATES.exec(line)
@@ -64,7 +65,7 @@ export function parsePlan(path: string, text: string): Plan {
   if (tasks.length === 0 && stepsTotal === 0) {
     for (const line of lines) {
       const numbered = NUMBERED_HEADING.exec(line)
-      if (numbered !== null) tasks.push({ name: numbered[2]!.trim(), isDone: false, creates: [] })
+      if (numbered !== null) tasks.push({ id: numbered[1]!, name: numbered[2]!.trim(), isDone: false, creates: [] })
     }
   }
 
@@ -96,6 +97,30 @@ export function markBuilt(plan: Plan, exists: (path: string) => boolean): Plan {
     isDone: built[i]! || (t.creates.length === 0 && built.slice(i + 1).some(Boolean)),
   }))
   return { ...plan, tasks }
+}
+
+// subagent-driven-development neither ticks the plan nor keeps todos reliably:
+// it logs each task to a ledger at <repo>/.superpowers/sdd/<plan name>/progress.md
+export function ledgerPath(root: string, planPath: string): string {
+  return `${root}/.superpowers/sdd/${planPath.split('/').pop()!.replace(/\.md$/, '')}/progress.md`
+}
+
+const LEDGER_DONE = /^Task\s+(\d+[a-z]?):\s+complete\b/i
+
+// The tasks a ledger marks complete ("Task 3: complete (commits ...)"). A
+// ledger whose first line names another plan is that plan's, so it counts for nothing.
+export function ledgerDone(planPath: string, text: string): Set<string> {
+  const [first = '', ...rest] = text.split('\n')
+  const name = planPath.split('/').pop()!
+  if (!first.includes(name)) return new Set()
+  return new Set(rest.flatMap(l => {
+    const m = LEDGER_DONE.exec(l.trim())
+    return m === null ? [] : [m[1]!.toLowerCase()]
+  }))
+}
+
+export function markLedger(plan: Plan, done: ReadonlySet<string>): Plan {
+  return { ...plan, hasLedger: true, tasks: plan.tasks.map(t => (done.has(t.id) ? { ...t, isDone: true } : t)) }
 }
 
 // The project a plan belongs to: the folder above docs/superpowers/plans.

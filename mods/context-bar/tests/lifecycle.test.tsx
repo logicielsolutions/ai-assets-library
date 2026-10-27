@@ -217,6 +217,26 @@ test('superpowers: brainstorm, write the plan, then carry it out', async ($, on)
   expect(working).not.toContain('planning')
 })
 
+test('a subagent-driven-development ledger drives the plan bar', async ($, on) => {
+  const LEDGER = '/work/app/.superpowers/sdd/2026-10-14-backbone/progress.md'
+  const files: Record<string, string> = { [PLAN_PATH]: OPEN }
+  engine(on, files)
+  files[LEDGER] = '# SDD ledger — plan: docs/superpowers/plans/2026-10-14-backbone.md\n\n## Pre-flight conflict scan\n'
+  await $.turn.start({ text: 'go', turnId: 'go' })
+  await $.tool.call({ tool: 'Read', file_path: PLAN_PATH })
+  // A ledger with nothing complete: setup and the conflict scan
+  const preflight = await band($)
+  expect(preflight).toContain('0/2')
+  expect(preflight).toContain('pre-flight')
+  // The controller logs Task 1 done; the bar moves on that call, mid-turn
+  files[LEDGER] += 'Task 1: complete (commits aaaaaaa..bbbbbbb, review clean)\n'
+  await $.tool.call({ tool: 'Bash', command: `echo done >> ${LEDGER}`, description: 'Log Task 1' })
+  const working = await band($)
+  expect(working).toContain('1/2')
+  expect(working).toContain('Retrieval')
+  expect(working).not.toContain('pre-flight')
+})
+
 test('plan mode shows as planning until the plan is approved', async ($, on) => {
   engine(on, {})
   await $.turn.start({ text: 'add a rerank toggle', turnId: 'pm' })
