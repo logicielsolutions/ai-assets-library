@@ -34,6 +34,15 @@ Mods change Claude Code itself: status-line entries, panes, toasts, slash comman
 | [`guard`](mods/guard/) | Asks before a prompt with an API key, token or password is sent (redact it, send as typed, or edit), hides them in tool output, and asks before Claude writes or runs one; `/guard setup` adds optional local PII detection (Presidio) | `/plugin install guard --marketplace logicielsolutions/ai-assets-library` |
 | [`context-bar`](mods/context-bar/) | One line above the prompt with context fill and the live plan, task list or current step; `/progress` opens a pane with tasks, plan and every tool step | `/plugin install context-bar --marketplace logicielsolutions/ai-assets-library` |
 
+
+## Modules
+
+Modules are Python packages for the apps you build, installed with pip. Each one lives in [`modules/`](modules/).
+
+| Module | What it does | Install |
+|-----|-------------|---------|
+| [`agent-memory`](modules/agent-memory/) | Long-term memory for AI assistants on Zep Cloud: one memory per user, write rules that drop fake "rules for everyone" and redact card, ID, health and salary details, a date and source on every fact, and forgetting | `pip install -e modules/agent-memory` |
+
 ---
 
 ## Why this exists
