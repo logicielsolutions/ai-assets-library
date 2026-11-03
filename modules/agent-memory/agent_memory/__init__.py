@@ -3,4 +3,4 @@ from .rules import Screen, NEVER_STORE
 from .store import Memory, Fact
 
 __all__ = ["Memory", "Fact", "Screen", "NEVER_STORE"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

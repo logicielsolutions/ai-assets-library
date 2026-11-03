@@ -79,7 +79,10 @@ class Memory:
 
     # ---- read ------------------------------------------------------------
     def recall(self, user, query, as_of=None):
-        """Facts relevant to the query, as they stood on `as_of` (YYYY-MM-DD). Newest-first is Zep's ranking."""
+        """The k facts most relevant to the query, as they stood on `as_of` (YYYY-MM-DD).
+
+        Zep picks the facts by relevance; they come back oldest first, so a change of plan
+        or a date sequence reads in the order it happened (+2.6/80 on the test bench)."""
         g = self._graph(user)
         edges = self.z.graph.search_edges(g, query=query[:400], page_size=self.k * 2)
         facts = []
@@ -93,7 +96,7 @@ class Memory:
             facts.append(Fact(e.fact, start, end, list(e.episode_uuids or [])))
             if len(facts) == self.k:
                 break
-        return facts
+        return sorted(facts, key=lambda f: f.valid_from or "0000")
 
     def sources(self, user, fact):
         """Where a fact came from: [{"user", "conversation", "date"}], one per stored conversation."""

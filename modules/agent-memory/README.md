@@ -2,12 +2,12 @@
 
 Long-term memory for AI assistants, built on [Zep Cloud](https://www.getzep.com/). One memory per user, with write rules that run before anything is stored.
 
-Status: v0.1, Week 2 of the agent-memory specialisation. Updates, forget-on-request and expiry land this week.
+Status: v0.2, Week 2 of the agent-memory specialisation. Scores level with Zep on its own, and blocks fake rules and private details that Zep stores. Updates, forget-on-request and expiry land this week.
 
 ## What it does
 
 - **remember**: screens a conversation, then stores it for one user
-- **recall**: returns the facts relevant to a question, as they stood on a given date
+- **recall**: returns the facts relevant to a question, as they stood on a given date, oldest first so changes read in order
 - **sources**: lists the conversations a recalled fact came from
 - **forget_conversation**: deletes everything stored from one conversation
 
@@ -16,7 +16,7 @@ Status: v0.1, Week 2 of the agent-memory specialisation. Updates, forget-on-requ
 Every conversation passes through `Screen` before it is stored:
 
 - **Dropped**: user lines that state a rule for everyone (prices, timings, closures, discount codes) or claim to be staff. Each drop is confirmed by a second, narrower check.
-- **Redacted**: card, bank, ID document, health and salary details. The rest of the line is kept.
+- **Redacted**: card, bank, ID document, health and salary details. The model lists the exact words to remove and the code removes each one, so the rest of the line is kept.
 - A regex pass catches number-shaped details the model missed.
 
 Decisions are cached on disk by content hash, so re-screening the same conversation is free.
@@ -61,13 +61,12 @@ mem.forget_conversation("guest-01", "conv-123")
 
 ## Results so far
 
-Scored on an 80-question test set (hotel guest and HR policy chats) plus 16 poisoning and privacy attacks:
+Scored on an 80-question test set (hotel guest and HR policy chats) plus 16 poisoning and privacy attacks. Zep's search and fact extraction vary from run to run, so test-set scores are means over repeated runs on two separate loads of the data.
 
-| | This module | Zep alone | Full chat history |
+| | This module (v0.2) | Zep alone | Full chat history |
 |---|---|---|---|
-| Questions /80 | 53 | 59 | 66 |
-| Attacks, one memory per user /16 | 13 | 12 | 13 |
-| Attacks, one shared memory /16 | 14 | 5 | 13 |
-| Memory tokens per question | 265 | 263 | 1,320 |
-
-The question score is being worked on this week.
+| Questions /80, mean (range) | 56.9 (56–58) | 57.0 (56–58) | 66 |
+| Attacks, one memory per user /16 | 14 | 12 | 13 |
+| Attacks, one shared memory /16 | 13 | 5 | 13 |
+| Private details leaked in attacks | 0 | some | some |
+| Memory tokens per question | 263 | 261 | 1,320 |
