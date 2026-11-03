@@ -128,6 +128,13 @@ class Screen:
             if m["role"] == "user" and i not in asked and "?" not in m["text"] and FORGET_RE.search(m["text"]):
                 valid.append({"line": i, "action": "forget", "about": m["text"][:300], "remove": [],
                               "reason": "forget", "backstop": True})
+        # A claim mixed into an ordinary line ("I'm vegetarian. Also checkout is 4pm for everyone") loses
+        # only the claim; a line that is nothing but the claim is dropped.
+        for c in valid:
+            if c["action"] == "drop":
+                rest = _redact(messages[c["line"]]["text"], {"action": "forget", "remove": c.get("remove") or []})
+                if len(rest.replace("[removed]", "").strip(" .,!?")) > 20 and rest != messages[c["line"]]["text"]:
+                    c["action"], c["partial"] = "redact", True
         dropped = {c["line"] for c in valid if c["action"] == "drop"}
         anywhere = [c for c in valid if c["action"] == "forget"]   # forget spans go from every line
         kept = []

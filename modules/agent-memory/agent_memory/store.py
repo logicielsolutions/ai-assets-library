@@ -123,6 +123,19 @@ class Memory:
             self._wait(g, ep.episode.uuid_)
         return ep.episode.uuid_
 
+    def _wait_gone(self, graph, episode, timeout=120):
+        """Wait until a deleted episode's facts are gone, so a re-added copy isn't merged into them."""
+        from zep_cloud.types import EdgeListFilters
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            try:
+                left = list(self.z.graph.edge.list(graph, page_size=5, filters=EdgeListFilters(episode_uuids=[episode])))
+            except Exception:
+                left = []
+            if not left:
+                return
+            time.sleep(2)
+
     def _wait(self, graph, episode, timeout=600):
         t0 = time.time()
         while time.time() - t0 < timeout:
@@ -200,7 +213,7 @@ class Memory:
             if not any(p.search(e.fact) for e in others):
                 details.add(d.strip())
         pats = [_span_pattern(d) for d in details]
-        rewritten = 0
+        rewritten, fresh = 0, []
         for ep in list(self.z.graph.episode.list(g, page_size=100)):
             meta = dict(ep.metadata or {})
             if before and meta.get("conversation") == before:
@@ -211,14 +224,19 @@ class Memory:
                 new = p.sub("[removed]", new)
             if new != text:
                 self.z.graph.episode.delete(g, ep.uuid_)
+                self._wait_gone(g, ep.uuid_)   # deletion runs in the background; re-adding before it ends loses facts
                 src = {"user": meta.get("user", user), "conversation": meta.get("conversation", "?"),
                        "date": meta.get("date") or str(ep.reference_time or "")[:10]}
                 uuid = self._add(user, new, src)
+                fresh.append(uuid)
                 if self.expiry and self.wait:
                     self._set_expiry(user, uuid, src["date"])
                 rewritten += 1
         gone = 0
-        for e in [edges[i] for i in sorted(picked)]:
+        # facts Zep rebuilt from the cleaned chats that only say "allergic to [removed]" carry nothing useful
+        from zep_cloud.types import EdgeListFilters
+        rebuilt = list(self.z.graph.edge.list(g, page_size=100, filters=EdgeListFilters(episode_uuids=fresh))) if fresh else []
+        for e in [edges[i] for i in sorted(picked)] + [e for e in rebuilt if "[removed]" in e.fact]:
             try:
                 self.z.graph.edge.delete(g, e.uuid_)
                 gone += 1
