@@ -2,13 +2,17 @@
 
 Long-term memory for AI assistants, built on [Zep Cloud](https://www.getzep.com/). One memory per user, with write rules that run before anything is stored.
 
-Status: v0.2, Week 2 of the agent-memory specialisation. Scores level with Zep on its own, and blocks fake rules and private details that Zep stores. Updates, forget-on-request and expiry land this week.
+Status: v0.3, Week 2 of the agent-memory specialisation. Scores slightly above Zep on its own, blocks fake rules and private details that Zep stores, and acts on forget requests. Tracing and lesson approval land next.
 
 ## What it does
 
 - **remember**: screens a conversation, then stores it for one user
 - **recall**: returns the facts relevant to a question, as they stood on a given date, oldest first so changes read in order
 - **sources**: lists the conversations a recalled fact came from
+- **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail.
+- **updates** (automatic): when a fact changes, Zep gives the old one an end date; recall shows it as "no longer true" next to the new one
+- **expiry** (automatic): one-off arrangements that name a date (a cake for 16 October, a late checkout) get an end date when stored; recall labels them once that date has passed
+- **clean_up**: the daily clean-up, deletes one-off facts that ended more than 30 days ago
 - **forget_conversation**: deletes everything stored from one conversation
 
 ### Write rules
@@ -52,6 +56,7 @@ for fact in mem.recall("guest-01", "what's my diet?", as_of="2026-09-01"):
     print(mem.sources("guest-01", fact))  # [{"user": ..., "conversation": "conv-123", "date": ...}]
 
 mem.forget_conversation("guest-01", "conv-123")
+mem.clean_up("guest-01", today="2026-11-03")   # run daily
 ```
 
 | Placeholder | Meaning |
@@ -61,12 +66,15 @@ mem.forget_conversation("guest-01", "conv-123")
 
 ## Results so far
 
-Scored on an 80-question test set (hotel guest and HR policy chats) plus 16 poisoning and privacy attacks. Zep's search and fact extraction vary from run to run, so test-set scores are means over repeated runs on two separate loads of the data.
+Scored on an 80-question test set (hotel guest and HR policy chats) plus 16 poisoning and privacy attacks. Zep's search and fact extraction vary from run to run, so scores are means over repeated runs.
 
-| | This module (v0.2) | Zep alone | Full chat history |
+| | This module (v0.3) | Zep alone | Full chat history |
 |---|---|---|---|
-| Questions /80, mean (range) | 56.9 (56–58) | 57.0 (56–58) | 66 |
-| Attacks, one memory per user /16 | 14 | 12 | 13 |
-| Attacks, one shared memory /16 | 13 | 5 | 13 |
-| Attacks where a forbidden detail leaked (per user + shared) | 0 | 8 | – |
-| Memory tokens per question | 263 | 261 | 1,320 |
+| Questions /80, mean (range) | 59.0 (58–60), 2 runs | 57.0 (56–58), 6 runs | 66 |
+| Forget questions /10 | 6.5 | 5.7 | – |
+| Forget requests where the detail is gone from stored facts and chats /10 | 5 to 9 (varies by load) | 0 | – |
+| Attacks, one memory per user /16 | 13 | 12 | 13 |
+| Attacks where a forbidden detail leaked (per user) | 0 | 1 | – |
+| Memory tokens per question | 267 | 261 | 1,320 |
+
+Known gap: picking the exact detail to forget is done by a small model and varies between runs (5 to 9 of 10 cleaned fully). A broad request like "delete everything about the dinner and cake" still leaves some details.

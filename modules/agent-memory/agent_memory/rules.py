@@ -18,6 +18,10 @@ from pathlib import Path
 
 NEVER_STORE = ["card", "bank", "id_document", "health", "salary"]
 
+# Backstop for forget requests the model misses: plain "forget", or delete/remove/erase ... from memory.
+FORGET_RE = re.compile(r"\bforget\b|\b(delete|remove|erase)\b[^.?!]*\b(memory|records|chat|system)\b"
+                       r"|\bdon'?t want (it|this|that)?\s*(saved|stored|kept)", re.I)
+
 # Number-shaped never-store details. Phone numbers (10 digits) are allowed: they're contact details.
 PATTERNS = [
     (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[number removed]"),            # card or bank account
@@ -52,7 +56,14 @@ and due dates (needed for leave), expense claim amounts, salary payment dates, b
 NOT global claims: questions (even about rules), the user's own requests, plans and schedule
 ("I'll be in office Monday and Wednesday"), and anything the assistant says.
 
-Return JSON only: {{"changes": [{{"line": <n>, "action": "redact" | "drop", "remove": ["<exact text to remove>", ...], "reason": "<card | bank | id_document | health | salary | global_claim>"}}]}}
+3. FORGET REQUESTS (action "forget"), user lines only: the user asks the assistant to forget, delete or
+stop keeping something they shared (a detail, a plan, a number, a complaint, a name).
+- "about": a few words naming what is to be forgotten, for searching memory (e.g. "nut allergy",
+  "sister's phone number", "surprise dinner plans"). Use the user's own words where possible.
+- "remove": every word or phrase in THIS transcript (any line) that gives the forgotten detail away,
+  copied exactly, so the request itself does not store it. Can be empty.
+
+Return JSON only: {{"changes": [{{"line": <n>, "action": "redact" | "drop" | "forget", "remove": ["<exact text to remove>", ...], "about": "<forget only>", "reason": "<card | bank | id_document | health | salary | global_claim | forget>"}}]}}
 Return {{"changes": []}} when nothing matches, which is the usual case.
 
 TRANSCRIPT:
@@ -71,12 +82,22 @@ Answer "no" if it is a question, a request, or about the user's own situation, p
 Answer yes or no only."""
 
 
+def _span_pattern(span):
+    """Match a span case-insensitively; digit runs also match with spaces or hyphens between digits."""
+    digits = re.sub(r"\D", "", span)
+    if len(digits) >= 5 and len(digits) >= len(span.replace(" ", "")) - 2:
+        return re.compile(r"[ -]?".join(re.escape(d) for d in digits))
+    return re.compile(r"\s+".join(re.escape(w) for w in span.split()), re.I)
+
+
 def _redact(text, change):
     """Remove each listed span. Older cached decisions carry a rewritten line in "text" instead."""
-    spans = [x for x in change.get("remove") or [] if isinstance(x, str) and x.strip() and x in text]
-    if spans:
-        for x in sorted(spans, key=len, reverse=True):
-            text = text.replace(x, "[removed]")
+    spans = [x for x in change.get("remove") or [] if isinstance(x, str) and len(x.strip()) > 1]
+    hit = False
+    for x in sorted(spans, key=len, reverse=True):
+        text, n = _span_pattern(x.strip()).subn("[removed]", text)
+        hit = hit or n > 0
+    if hit or change.get("action") == "forget":
         return text
     return change.get("text") or text
 
@@ -101,15 +122,23 @@ class Screen:
         """messages: [{"role", "text"}]. Returns (kept_messages, changes)."""
         lines = [f"{i}. {m['role']}: {m['text']}" for i, m in enumerate(messages)]
         changes = self._changes("\n".join(lines))
-        by_line = {c["line"]: c for c in changes if self._valid(c, messages)}
+        valid = [c for c in changes if self._valid(c, messages)]
+        asked = {c["line"] for c in valid if c["action"] == "forget"}
+        for i, m in enumerate(messages):
+            if m["role"] == "user" and i not in asked and "?" not in m["text"] and FORGET_RE.search(m["text"]):
+                valid.append({"line": i, "action": "forget", "about": m["text"][:300], "remove": [],
+                              "reason": "forget", "backstop": True})
+        dropped = {c["line"] for c in valid if c["action"] == "drop"}
+        anywhere = [c for c in valid if c["action"] == "forget"]   # forget spans go from every line
         kept = []
         for i, m in enumerate(messages):
-            c = by_line.get(i)
-            if c and c.get("action") == "drop":
+            if i in dropped:
                 continue
-            text = _redact(m["text"], c) if c and c.get("action") == "redact" else m["text"]
+            text = m["text"]
+            for c in [c for c in valid if c["action"] == "redact" and c["line"] == i] + anywhere:
+                text = _redact(text, c)
             kept.append({**m, "text": regex_scrub(text)})
-        return kept, list(by_line.values())
+        return kept, valid
 
     @staticmethod
     def _valid(c, messages):
@@ -121,6 +150,8 @@ class Screen:
             m = messages[i]
             return (m["role"] == "user" and c.get("reason") == "global_claim" and "?" not in m["text"]
                     and c.get("confirmed", False))
+        if c.get("action") == "forget":
+            return messages[i]["role"] == "user" and bool(str(c.get("about") or "").strip())
         return c.get("action") == "redact" and c.get("reason") in NEVER_STORE
 
     def _changes(self, transcript):
@@ -144,6 +175,20 @@ class Screen:
         if hit:
             hit.write_text(json.dumps(changes, indent=1))
         return changes
+
+    def ask_json(self, prompt):
+        """One JSON-mode call, cached on disk by prompt hash (used by forget and expiry)."""
+        key = hashlib.sha256(f"{self.model}|json|{prompt}".encode()).hexdigest()[:16]
+        hit = self.cache / f"j-{key}.json" if self.cache else None
+        if hit and hit.exists():
+            return json.loads(hit.read_text())
+        try:
+            out = json.loads(self._ask(prompt, json_mode=True))
+        except json.JSONDecodeError:
+            out = {}
+        if hit:
+            hit.write_text(json.dumps(out, indent=1))
+        return out
 
     def _ask(self, prompt, json_mode=False):
         req = {"model": self.model, "temperature": 0, "messages": [{"role": "user", "content": prompt}]}
