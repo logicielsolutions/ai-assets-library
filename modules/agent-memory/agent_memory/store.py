@@ -23,6 +23,7 @@ import re
 import time
 from dataclasses import dataclass, field
 
+from . import policy as _policy
 from .rules import Screen, _span_pattern
 
 FORGET_PROMPT = """A user asked an assistant to forget something. Their request: "{request}"
@@ -42,13 +43,12 @@ in other facts for other reasons (a manager, a travel companion)."""
 
 _DATED = re.compile(r"\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t|tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}/\d{1,2}\b", re.I)
 
-EXPIRY_PROMPT = """These facts were just saved from a hotel or workplace assistant's chat dated {date}.
-For each one, decide whether it is a ONE-OFF arrangement made for one specific upcoming or current
-stay, trip, event or leave (a room request for that trip, an extra bed, a cake, a late checkout, an
-airport pickup, the booking itself, a leave request) or a LASTING fact.
-LASTING: preferences and needs that apply to every stay (a pet-friendly room, a quiet floor),
-diet, habits, contact details, personal details, policies, and anything that already happened
-(past events, feedback, complaints, compensation, what someone liked).
+EXPIRY_PROMPT = """These facts were just saved from {owner}'s chat with a user, dated {date}.
+For each one, decide whether it is a ONE-OFF arrangement tied to one specific upcoming or current
+date or event (for this product, e.g. {one_off}) or a LASTING fact.
+LASTING: preferences and needs that apply every time, diet, habits, contact details, personal
+details, policies, and anything that already happened (past events, feedback, complaints,
+compensation, what someone liked).
 For one-off ones give the last date it matters (checkout, event or end date) as YYYY-MM-DD.
 When in doubt, it is LASTING.
 
@@ -75,14 +75,16 @@ class Fact:
 
 class Memory:
     def __init__(self, owner="the assistant", namespace="mem", zep_api_key=None,
-                 screen=None, k=10, wait=True, expiry=True):
+                 screen=None, k=10, wait=True, expiry=True, policy=None):
         from zep_cloud.client import Zep
         self.z = Zep(api_key=zep_api_key or os.environ["ZEP_API_KEY"])
         self.ns = namespace
         self.k = k
         self.wait = wait
         self.expiry = expiry
-        self.screen = screen or Screen(owner=owner)
+        self.screen = screen or Screen(owner=owner, policy=policy)
+        self.owner = owner
+        self.policy = self.screen.policy
         self._graphs = {}
         self._episodes = {}   # episode uuid -> source metadata (filled lazily)
 
@@ -256,7 +258,8 @@ class Memory:
         if not edges:
             return 0
         listing = "\n".join(f"{i}. {e.fact}" for i, e in enumerate(edges))
-        out = self.screen.ask_json(EXPIRY_PROMPT.format(date=date, facts=listing))
+        out = self.screen.ask_json(EXPIRY_PROMPT.format(owner=self.owner, date=date, facts=listing,
+                                                        one_off=self.policy.one_off))
         tagged = 0
         for item in out.get("one_off") or []:
             i, until = item.get("n"), str(item.get("until") or "")

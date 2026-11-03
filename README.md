@@ -41,7 +41,7 @@ Modules are Python packages for the apps you build, installed with pip. Each one
 
 | Module | What it does | Install |
 |-----|-------------|---------|
-| [`agent-memory`](modules/agent-memory/) | Long-term memory for AI assistants on Zep Cloud: one memory per user, write rules that drop fake "rules for everyone" and redact card, ID, health and salary details, a date and source on every fact, and forgetting | `pip install -e modules/agent-memory` |
+| [`agent-memory`](modules/agent-memory/) | Drop-in long-term memory for any assistant, on Zep Cloud: one memory per user, write rules that drop fake "rules for everyone" and redact cards, IDs, health, salary and passwords, a date and source on every fact, forget on request, expiry. Presets for support, hotel and HR, or your own policy | `pip install -e modules/agent-memory` |
 
 ---
 
