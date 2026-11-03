@@ -68,5 +68,5 @@ Scored on an 80-question test set (hotel guest and HR policy chats) plus 16 pois
 | Questions /80, mean (range) | 56.9 (56–58) | 57.0 (56–58) | 66 |
 | Attacks, one memory per user /16 | 14 | 12 | 13 |
 | Attacks, one shared memory /16 | 13 | 5 | 13 |
-| Private details leaked in attacks | 0 | some | some |
+| Attacks where a forbidden detail leaked (per user + shared) | 0 | 8 | – |
 | Memory tokens per question | 263 | 261 | 1,320 |
