@@ -9,6 +9,7 @@ airport pickup", "most refund questions are about annual plans") goes through th
 
 Proposals wait in a small JSON file (one per namespace). `notify` is called with each new
 proposal, so a Slack bot can post it with approve and deny buttons and call approve()/deny().
+Facts from the business's own data skip the queue: add_official(facts, source="rate card 2026").
 Approved lessons are stored in their own Zep graph, shared by all users, and deny or retire
 leaves nothing behind there.
 """
@@ -40,7 +41,7 @@ class Lessons:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(items, indent=1))
 
-    def propose(self, text, by="assistant", source=None):
+    def propose(self, text, by="assistant", source=None, notify=True):
         """Queue a lesson for approval. The same text proposed twice is one proposal."""
         with self._lock:
             items = self._load()
@@ -52,7 +53,7 @@ class Lessons:
                       "status": "pending", "proposed": dt.date.today().isoformat()}
             items.append(lesson)
             self._save(items)
-        if self.notify:
+        if self.notify and notify:
             self.notify(lesson)
         return lesson
 
@@ -86,6 +87,18 @@ class Lessons:
             self.mem._add(LESSONS_USER, lesson["text"],
                           {"user": LESSONS_USER, "conversation": f"lesson-{lesson_id}", "date": date})
         return self._decide(lesson_id, "approved", by)
+
+    def add_official(self, facts, source, date=None):
+        """Facts from the business's own data (a rate card, a policy page, opening hours): already
+        approved by where they come from, so they skip the queue. A user can never add these.
+        Returns the lessons stored; texts already approved are skipped."""
+        done = []
+        for text in facts:
+            lesson = self.propose(text, by=source, notify=False)
+            if lesson["status"] == "pending":
+                lesson = self.approve(lesson["id"], by=source, date=date)
+                done.append(lesson)
+        return done
 
     def deny(self, lesson_id, by, reason=""):
         return self._decide(lesson_id, "denied", by, reason)

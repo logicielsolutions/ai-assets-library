@@ -25,7 +25,15 @@ proposed ──► pending ──► approve ──► stored for everyone, retu
 approved ──► retire ──► removed from memory
 ```
 
-`Memory(notify=fn)` calls `fn(lesson)` for each new proposal, so a Slack approve/deny bot can post it and call `mem.lessons.approve(id, by)` or `deny(id, by, reason)`.
+`Memory(notify=fn)` calls `fn(lesson)` for each new proposal. For Slack, use the team's safety net:
+
+```python
+# pip install -e "modules/agent-memory[slack]"; SLACK_BOT_TOKEN=xoxb-... in the environment
+from agent_memory.slack_approval import SlackLessonApproval
+SlackLessonApproval(mem, channel="#agent-memory-approvals", approvers=["U012ABCDEF"])
+```
+
+Each proposal is posted to the channel; a reviewer replies approve or deny in its thread, and no answer within the hour counts as a deny. Lessons that look like hidden instructions are denied before anyone is asked, and at most 5 are asked per batch. The bot needs `chat:write` plus `channels:history` (or `groups:history` for a private channel); the safety net repo's `slack/app-manifest.yaml` creates one.
 
 ### Write rules
 

@@ -5,6 +5,10 @@ description = "Drop-in long-term memory for any assistant, on Zep Cloud: write r
 requires-python = ">=3.10"
 dependencies = ["zep-cloud>=4.0"]
 
+[project.optional-dependencies]
+# lesson approval in Slack through the team safety net (private repo, Python 3.11+)
+slack = ["agent-safety-net @ git+https://github.com/logicielsolutions/agent-safety-net"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
