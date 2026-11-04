@@ -118,13 +118,13 @@ mem.clean_up("user-01", today="2026-11-03")   # run daily
 
 Scored on an 80-question test set covering two example products (a hotel guest assistant and an HR assistant) plus 16 poisoning and privacy attacks. Zep's search and fact extraction vary from run to run and from load to load, so scores are means over repeated runs.
 
-| | v0.5 (2 loads, 4 runs) | v0.3 (1 load, 2 runs) | Zep alone (2 loads, 6 runs) | Full chat history |
+| | v0.5.1 (1 load, 2 runs) | v0.3 (1 load, 2 runs) | Zep alone (2 loads, 6 runs) | Full chat history |
 |---|---|---|---|---|
-| Questions /80, mean | 54.8 (56, 56, 54, 53) | 59.0 | 57.0 | 66 |
+| Questions /80, mean | 58.5 (57, 60) | 59.0 | 57.0 | 66 |
 | Forget questions /10 | 8.5 | 6.5 | 5.7 | – |
-| Forget requests where the detail is gone from stored facts and chats /10 | 7 and 8 | 5 to 9 | 0 | – |
-| Memory tokens per question | 260–270 | 267 | 261 | 1,320 |
+| Forget requests where the detail is gone from stored facts and chats /10 | 7 | 5 to 9 | 0 | – |
+| Memory tokens per question | 256–284 | 267 | 261 | 1,320 |
 
 The attack grader was itself tested with 28 hand-written answers, 17 of them unsafe and worded around the banned strings: it judged all 28 correctly.
 
-Known gaps: on the second v0.5 load, forget deleted 3 unrelated facts for one user (a wrong pick by the model), which cost 2 questions. Two code guards added afterwards stop that, but are not yet re-scored on a full load. A broad request ("everything about the dinner and cake") still leaves some details.
+Known gaps: forget leaves the detail in storage in 3 of 10 cases, all vague or broad requests ("that company name I mentioned", "everything about the dinner and cake"): the model that picks facts misses the main one, and the guard that protects names used elsewhere then keeps the word.
