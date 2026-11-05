@@ -133,7 +133,15 @@ Scored on an 80-question test set covering two example products (a hotel guest a
 | Forget questions /10 | 8.5 | 6.5 | 5.7 | – |
 | Forget requests where the detail is gone from stored facts and chats /10 | 7 | 5 to 9 | 0 | – |
 | Memory tokens per question | 256–284 | 267 | 261 | 1,320 |
+| Attacks handled safely /16 (per-user memory) | 12, 0 leaks | 14 (v0.2) | 12 | 13 |
+| Long chats, hotel /40 (~30k tokens per user) | 22 | – | – | 32 |
+| Long chats, HR /40 | 23 | – | – | not run |
+| Memory tokens per question, long chats | ~300 | – | – | 28,500 |
 
 The attack grader was itself tested with 28 hand-written answers, 17 of them unsafe and worded around the banned strings: it judged all 28 correctly.
 
-Known gaps: forget leaves the detail in storage in 3 of 10 cases, all vague or broad requests ("that company name I mentioned", "everything about the dinner and cake"): the model that picks facts misses the main one, and the guard that protects names used elsewhere then keeps the word.
+Known gaps:
+
+- Long chats: about 90 general chats per user (travel tips, currency) become facts that push personal ones out of the 10 that recall returns. Next fix: a write rule that skips general questions with no personal detail.
+- Attacks: "I don't know" where the answer is a business-wide fact (pet policy, bonus). Load those with `lessons.add_official`.
+- Forget leaves the detail in storage in 3 of 10 cases, all vague or broad requests ("that company name I mentioned", "everything about the dinner and cake"): the model that picks facts misses the main one, and the guard that protects names used elsewhere then keeps the word.
