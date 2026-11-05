@@ -70,8 +70,15 @@ mem = Memory(owner="Acme's support bot", namespace="acme", policy=Policy(
 ## Install
 
 ```bash
+# from GitHub, no clone needed (until the branch is merged, use @agent-memory-module instead of @main)
+pip install "agent-memory @ git+https://github.com/logicielsolutions/ai-assets-library@main#subdirectory=modules/agent-memory"
+# add Slack lesson approval (needs access to the private agent-safety-net repo, Python 3.11+)
+pip install "agent-memory[slack] @ git+https://github.com/logicielsolutions/ai-assets-library@main#subdirectory=modules/agent-memory"
+# or from a clone
 pip install -e modules/agent-memory
 ```
+
+Checked 5 Nov on a fresh Python 3.12 (base) and 3.14 (with `[slack]`): installs from GitHub, imports, 6/6 tests pass, recall works against Zep. No other dependencies: OpenAI is called over plain HTTPS.
 
 Needs Python 3.10+ and two keys in the environment:
 
