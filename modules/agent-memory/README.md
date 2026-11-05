@@ -89,6 +89,8 @@ Needs Python 3.10+ and two keys in the environment:
 
 ## Use
 
+`examples/quickstart.py` runs remember, recall and forget for one user in a throwaway namespace (under a cent). The full API:
+
 ```python
 from agent_memory import Memory, Screen
 
