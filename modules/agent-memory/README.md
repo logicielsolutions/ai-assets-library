@@ -10,6 +10,7 @@ Status: v0.5, Week 2 of the agent-memory specialisation. Scores slightly above Z
 - **recall**: returns the facts relevant to a question, as they stood on a given date, oldest first so changes read in order
 - **sources**: lists the conversations a recalled fact came from
 - **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail.
+- **one language** (optional): `Memory(language="English")` stores chats in other languages translated, so a Hindi or Hinglish call becomes English facts that an English question finds. Without it, Zep writes facts in the chat's own language. One extra model call, only for chats that need it.
 - **updates** (automatic): when a fact changes, Zep gives the old one an end date; recall shows it as "no longer true" next to the new one
 - **expiry** (automatic): one-off arrangements that name a date (a cake for 16 October, a late checkout) get an end date when stored; recall labels them once that date has passed
 - **clean_up**: the daily clean-up, deletes one-off facts that ended more than 30 days ago
@@ -137,6 +138,8 @@ Scored on an 80-question test set covering two example products (a hotel guest a
 | Long chats, hotel /40 (~30k tokens per user) | 22 | – | – | 32 |
 | Long chats, HR /40 | 23 | – | – | not run |
 | Memory tokens per question, long chats | ~300 | – | – | 28,500 |
+
+Hindi check (10 Nov, 5 synthetic hotel calls in English, Hinglish and Hindi): without `language`, 3 facts came out in Hindi or Hinglish; with `language="English"`, all 19 were English and recall found them. Card, Aadhaar, passport and CVV numbers were cut in every language, and a Hinglish "checkout is 2pm for everyone" was dropped.
 
 The attack grader was itself tested with 28 hand-written answers, 17 of them unsafe and worded around the banned strings: it judged all 28 correctly.
 

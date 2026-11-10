@@ -57,6 +57,15 @@ CHAT:
 
 Return JSON: {{"spans": ["<exact text>", ...]}}"""
 
+TRANSLATE_PROMPT = """Translate each line of this chat into plain {language}. Keep names, numbers, dates and
+"[removed]" markers exactly as they are. Lines already in {language} stay unchanged.
+Return JSON: {{"lines": ["<line 0 in {language}>", ...]}} with exactly {n} lines, in order.
+
+{lines}"""
+
+# Text that needs translating before it is stored: Indic scripts, or Hindi written in Latin letters.
+_NOT_ENGLISH = re.compile(r"[\u0900-\u0DFF]|\b(hai|hain|mujhe|mera|meri|chahiye|nahi|aap|kar do|kar lo|ke liye|bhej\w*|batay\w*|bataa\w*)\b", re.I)
+
 _DATED = re.compile(r"\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t|tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}/\d{1,2}\b", re.I)
 
 EXPIRY_PROMPT = """These facts were just saved from {owner}'s chat with a user, dated {date}.
@@ -96,7 +105,7 @@ class Fact:
 class Memory:
     def __init__(self, owner="the assistant", namespace="mem", zep_api_key=None,
                  screen=None, k=10, wait=True, expiry=True, policy=None,
-                 lessons_path=None, notify=None, claims_to_lessons=False):
+                 lessons_path=None, notify=None, claims_to_lessons=False, language=None):
         from zep_cloud.client import Zep
         self.z = Zep(api_key=zep_api_key or os.environ["ZEP_API_KEY"])
         self.ns = namespace
@@ -111,6 +120,7 @@ class Memory:
         from .lessons import Lessons
         self.lessons = Lessons(self, lessons_path, notify=notify)
         self.claims_to_lessons = claims_to_lessons
+        self.language = language   # e.g. "English": chats in other languages are stored translated
 
     # ---- ids -------------------------------------------------------------
     def _graph(self, user):
@@ -128,6 +138,7 @@ class Memory:
         """Screen, then store one conversation, then act on any forget requests in it.
         Returns the screen's changes; forget changes also carry what was deleted."""
         kept, changes = self.screen(messages)
+        kept = self._translate(kept)
         uuid = None
         if kept:
             text = "\n".join(f"{m['role']}: {m['text']}" for m in kept)
@@ -144,6 +155,20 @@ class Memory:
                 c["done"] = self.forget(user, c["about"], messages[c["line"]]["text"],
                                         c.get("remove") or [], before=conversation, keep_episode=uuid)
         return changes
+
+    def _translate(self, messages):
+        """Store facts in one language: Zep writes facts in the language of the chat, so a Hindi call
+        becomes Hindi facts that an English question can't find. One cached call per chat that needs it."""
+        if not self.language or not any(_NOT_ENGLISH.search(m["text"]) for m in messages):
+            return messages
+        lines = "\n".join(f"{i}. {m['role']}: {m['text']}" for i, m in enumerate(messages))
+        out = self.screen.ask_json(TRANSLATE_PROMPT.format(language=self.language, n=len(messages), lines=lines))
+        new = out.get("lines") or []
+        if len(new) != len(messages) or not all(isinstance(t, str) and t.strip() for t in new):
+            return messages   # a malformed answer: store the original
+        # the model echoes the "n. role:" prefix sometimes; the code adds it back on store
+        new = [re.sub(r"^\d+\.\s*(user|assistant):\s*", "", t.strip()) for t in new]
+        return [{**m, "text": t} for m, t in zip(messages, new)]
 
     def _add(self, user, text, source):
         g = self._graph(user)
