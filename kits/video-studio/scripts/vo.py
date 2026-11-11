@@ -35,8 +35,14 @@ def post(url, key, body):
 
 
 def words_from_alignment(al):
-    words, cur, start, end = [], "", None, None
+    words, cur, start, end, in_tag = [], "", None, None, False
     for ch, s, e in zip(al["characters"], al["character_start_times_seconds"], al["character_end_times_seconds"]):
+        # eleven_v3 audio tags like [warmly] or [speaking softly] are not spoken: treat them as a gap
+        if ch == "[":
+            in_tag = True
+        if in_tag:
+            in_tag = ch != "]"
+            ch = " "
         if ch.isspace():
             if cur:
                 words.append({"word": cur, "start": round(start, 3), "end": round(end, 3)})
@@ -48,7 +54,7 @@ def words_from_alignment(al):
         end = e
     if cur:
         words.append({"word": cur, "start": round(start, 3), "end": round(end, 3)})
-    return words
+    return [w for w in words if any(c.isalnum() for c in w["word"])]
 
 
 def main():
@@ -67,21 +73,24 @@ def main():
     out = pathlib.Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     body = {"text": a.text, "model_id": model}
+    words_file = out.with_name(out.name + "_words.json")
+    words_file.unlink(missing_ok=True)  # never leave timings from an older take
     try:
         data = json.loads(post(f"{API}/{voice}/with-timestamps?output_format=mp3_44100_128", key, body))
         out.with_suffix(".mp3").write_bytes(base64.b64decode(data["audio_base64"]))
         al = data.get("alignment") or data.get("normalized_alignment")
         if al:
-            out.with_name(out.name + "_words.json").write_text(json.dumps(words_from_alignment(al), indent=1))
+            words_file.write_text(json.dumps(words_from_alignment(al), indent=1))
         print(f"saved {out.with_suffix('.mp3')}" + (" + word timings" if al else ""))
     except urllib.error.HTTPError as e:
-        if e.code in (401, 403):
-            try:
-                msg = json.loads(e.read())["detail"]["message"]
-            except Exception:
-                msg = "check ELEVENLABS_API_KEY in .env"
-            sys.exit(f"ElevenLabs refused the request (HTTP {e.code}): {msg}")
-        # some models have no timestamp endpoint: fall back to plain audio
+        try:
+            msg = json.loads(e.read())["detail"]["message"]
+        except Exception:
+            msg = e.reason
+        if e.code not in (404, 405):
+            # auth, quota, rate limit, bad voice, server error: report it, don't fall back silently
+            sys.exit(f"ElevenLabs error (HTTP {e.code}): {msg}")
+        # this model has no timestamp endpoint: fall back to plain audio
         try:
             out.with_suffix(".mp3").write_bytes(post(f"{API}/{voice}?output_format=mp3_44100_128", key, body))
         except urllib.error.HTTPError as e2:

@@ -8,7 +8,7 @@ No video generation service is required. Everything can be drawn in code. If you
 
 1. Install Claude Code, Node 22+ and FFmpeg.
 2. Install HyperFrames: `npx hyperframes skills update` (or add the HyperFrames plugin), and check `npx hyperframes --version` works.
-3. Copy this whole folder to `~/.claude/skills/print-zine-motion/`.
+3. Install the `video-studio` plugin (see `kits/video-studio/README.md`), which includes this skill as `/video-studio:print-zine-motion`. Or copy this folder to `~/.claude/skills/print-zine-motion/` to use it on its own.
 4. Download the fonts: Satoshi (fontshare.com/fonts/satoshi, free) and JetBrains Mono (jetbrains.com/lp/mono, free). Each video project needs them in its `assets/fonts/` as `Satoshi-Black.otf`, `Satoshi-Bold.otf`, `Satoshi-Medium.otf` and `JetBrainsMono-Medium.ttf`.
 
 ## Use it
@@ -21,7 +21,7 @@ To see the system working first, watch `assets/starter-preview.mp4`. Opening `st
 
 ```
 npx hyperframes init my-video --example blank
-cp ~/.claude/skills/print-zine-motion/assets/starter.html my-video/index.html
+cp <this skill folder>/assets/starter.html my-video/index.html
 # put the fonts in my-video/assets/fonts/
 cd my-video
 npx hyperframes preview      # opens the player in your browser, press play, scrub the timeline

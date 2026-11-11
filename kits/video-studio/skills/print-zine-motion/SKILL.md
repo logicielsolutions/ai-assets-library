@@ -20,7 +20,7 @@ The look comes from a small set of rules applied everywhere, not from one effect
 Work in this order. Each step exists because skipping it caused a broken or flat video before.
 
 1. **Lock the audio first.** Get the final voiceover and music mixed into one track before any animation. Everything is timed to it, so a later audio change means retiming.
-2. **Get word timestamps.** `npx hyperframes transcribe <track>` gives word-level times. Every subtitle word, giant word and key action lands on the frame its word is spoken. Measure, don't guess.
+2. **Get word timestamps.** If the voiceover came from `scripts/vo.py`, use its `_words.json`. Otherwise `npx hyperframes transcribe <track>` gives word-level times. Every subtitle word, giant word and key action lands on the frame its word is spoken. Measure, don't guess.
 3. **Get the beat grid** if there's music: BPM and the time of the first downbeat. Cuts and scene changes go on beats and bars. Elements never pulse on the beat (that reads cheap); hits are single kicks that then hold steady.
 4. **Plan scenes against the words.** One scene per spoken line or idea. For each, write: the visual metaphor, the word each action lands on, and how it transforms into the next scene. Pick one accent "thread" object (see look.md) and decide where it appears, disappears and pays off.
 5. **Build the first 5-10 seconds only, render it, and get approval.** The hook decides whether the style works. It's much cheaper to change direction here than after 50 seconds are built.

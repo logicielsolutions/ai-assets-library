@@ -59,8 +59,8 @@ Tell them the plugin loads in the **next** Claude session.
 flow-mcp drives Google Flow in its own Chrome window, using their own Google account and Flow's daily free credits. It is a third-party repo, so install the reviewed commit only.
 
 ```bash
-git clone https://github.com/GTAI-1/flow-mcp.git ~/flow-mcp
-cd ~/flow-mcp && git checkout 03da4b2 && npm install && npm run build
+[ -d ~/flow-mcp/.git ] || git clone https://github.com/GTAI-1/flow-mcp.git ~/flow-mcp
+cd ~/flow-mcp && git fetch -q origin && git checkout -q 03da4b2 && npm install && npm run build
 ```
 
 - Sign-in: ask them to run `! cd ~/flow-mcp && npm run login`, sign into Google in the window that opens, open or create a Flow project and leave the window open.

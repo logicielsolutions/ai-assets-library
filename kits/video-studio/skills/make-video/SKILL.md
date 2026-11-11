@@ -13,7 +13,7 @@ The person drops references, says what they want, and waits. You do the rest. St
 
 - Read: the prompt, `WS/inbox/notes.md`, every file in `WS/inbox/`, `WS/brand/brand.md`, `WS/CLAUDE.md`.
 - Pick a short kebab slug. `cp -R WS/projects/_template WS/projects/<slug>`.
-- Move (don't copy) inbox files into `01_references/`: images → `images/`, videos → `videos/`, their own footage → `raw/`. Copy `notes.md` content into `00_brief.md`, then reset `inbox/notes.md` from the template (`KIT/templates/workspace/inbox/notes.md`).
+- Move (don't copy) inbox files into `01_references/`, except `inbox/README.md` and `inbox/notes.md`: images → `images/`, videos → `videos/`, their own footage → `raw/`. Copy `notes.md` content into `00_brief.md`, then reset `inbox/notes.md` from the template (`KIT/templates/workspace/inbox/notes.md`).
 - Links into `01_references/links.md`, then save them:
   - Instagram / YouTube / TikTok / Pinterest video: `yt-dlp -o "01_references/videos/%(id)s.%(ext)s" <url>`. If one fails (login wall), mark it failed in `links.md`, tell them in one line to drop that file into `01_references/videos/`, keep going.
   - Pinterest image: fetch the page, take the `og:image` URL, download it.
