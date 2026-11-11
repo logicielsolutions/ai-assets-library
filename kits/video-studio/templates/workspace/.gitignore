@@ -1,0 +1,6 @@
+.env
+.DS_Store
+node_modules/
+projects/*/05_final/*.mp4
+projects/*/03_assets/**/*.mp4
+flow-out/
