@@ -103,7 +103,7 @@ CLAUDE.md         house rules Claude follows in this folder
 |---|---|---|
 | [HyperFrames](https://github.com/heygen-com/hyperframes) | Turns HTML + animation into MP4. Renders every video locally | Free |
 | [ElevenLabs](https://elevenlabs.io) | Voiceover (`eleven_v3`, default voice Matilda; change in `.env`) | Free tier / paid plan |
-| [Google Flow](https://flow.google.com) via [flow-mcp](https://github.com/GTAI-1/flow-mcp) | Generated images (Nano Banana) and video clips (Veo) | Images free (50 credits/day), clips use credits. Claude asks before spending them |
+| [Google Flow](https://flow.google.com) via [google-flow-mcp](https://github.com/Manjot-logiciel/google-flow-mcp) | Generated images (Nano Banana) and video clips (Veo) | Images free (50 credits/day), clips use credits. Claude asks before spending them |
 | FFmpeg, yt-dlp | Cutting, mixing, downloading reference videos | Free |
 
 ## Troubleshooting
@@ -115,10 +115,10 @@ CLAUDE.md         house rules Claude follows in this folder
 - **Every Flow generation fails:** close the Agent panel in Flow's Chrome window.
 - **A Flow job hangs:** usually a content policy block. Run `/mcp` and reconnect `flow`.
 - **Flow says signed out:** sign in again in the Chrome window it opens.
-- **Mac, Flow says `EPERM: operation not permitted`:** flow-mcp must not live in Desktop, Documents or Downloads. Setup installs it in `~/flow-mcp`.
+- **Mac, Flow says `EPERM: operation not permitted`:** google-flow-mcp must not live in Desktop, Documents or Downloads. Setup installs it in `~/google-flow-mcp`.
 
 ## Good to know
 
-- Google Flow runs through flow-mcp, a third-party tool that drives Flow in its own Chrome window with your Google account. Setup installs a reviewed commit (`03da4b2`). Check your company's policy before using it with a work account.
+- Google Flow runs through [google-flow-mcp](https://github.com/Manjot-logiciel/google-flow-mcp), Logiciel's Flow MCP. It drives Flow in its own Chrome window, signed in with your own Google account, and uses your account's credits. Your sign-in stays on your machine (`~/.flow-mcp/chrome-profile`).
 - Music: use only tracks you hold the rights to, or let Claude generate a simple bed in code.
 - Every name, number and claim on screen must come from you or your references. Claude won't invent them.
