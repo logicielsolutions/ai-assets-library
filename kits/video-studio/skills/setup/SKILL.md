@@ -13,7 +13,7 @@ Goal: the person ends with a working video workspace and knows the one command t
 
 - Default: the current folder, if it is empty or already a video workspace (has `projects/_template/`).
 - If the current folder is the home folder or has unrelated files, suggest `~/video-studio` and use it unless they name another.
-- Mac: avoid `~/Desktop`, `~/Downloads` and iCloud folders for the Flow install (macOS blocks node there). The workspace itself is fine anywhere.
+- The workspace itself is fine anywhere. Only the Flow MCP install has to stay out of Desktop, Documents and Downloads (step 6).
 
 ## 2. Ask once (one AskUserQuestion call, all four questions)
 
@@ -56,21 +56,24 @@ Tell them the plugin loads in the **next** Claude session.
 
 ## 6. Google Flow (only if they chose it)
 
-flow-mcp drives Google Flow in its own Chrome window, using their own Google account and Flow's daily free credits. It is a third-party repo, so install the reviewed commit only.
+google-flow-mcp (https://github.com/Manjot-logiciel/google-flow-mcp) drives Google Flow in its own Chrome window, using their own Google account and Flow's daily free credits.
+
+First check for an existing Flow MCP: `claude mcp get flow`. If one is registered, leave it alone, tell them they already have Flow set up, and skip the rest of this step. Replacing it would drop their signed-in Chrome session.
 
 ```bash
-[ -d ~/flow-mcp/.git ] || git clone https://github.com/GTAI-1/flow-mcp.git ~/flow-mcp
-cd ~/flow-mcp && git fetch -q origin && git checkout -q 03da4b2 && npm install && npm run build
+[ -d ~/google-flow-mcp/.git ] || git clone https://github.com/Manjot-logiciel/google-flow-mcp.git ~/google-flow-mcp
+cd ~/google-flow-mcp && git pull -q && npm install && npm run build
 ```
 
-- Sign-in: ask them to run `! cd ~/flow-mcp && npm run login`, sign into Google in the window that opens, open or create a Flow project and leave the window open.
+- Install it in the home folder. On a Mac, Desktop, Documents and Downloads are blocked for node (`EPERM`).
+- Sign-in: ask them to run `! cd ~/google-flow-mcp && npm run login`, sign into Google in the window that opens, open or create a Flow project and leave the window open.
 - Register it for every session:
 
 ```bash
-claude mcp add --scope user flow -e FLOW_MCP_OUTPUT="<WS>/flow-out" -- node "$HOME/flow-mcp/dist/index.js"
+claude mcp add --scope user flow -e FLOW_MCP_OUTPUT="<WS>/flow-out" -- node "$HOME/google-flow-mcp/dist/index.js"
 ```
 
-- Never copy or delete the Chrome profile flow-mcp creates; it holds their Google session.
+- Never copy or delete the Chrome profile it creates (`~/.flow-mcp/chrome-profile`); it holds their Google session.
 
 ## 7. Finish
 

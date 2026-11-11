@@ -1,6 +1,6 @@
 ---
 name: writing-flow-scene-prompts
-description: Use when writing image or video prompts for Google Flow (flow-mcp, Nano Banana, Veo, Omni), planning keyframes for a clip, putting a real person into a scene from reference photos, or batch-generating story scenes; also when Flow output has vague hands, wrong hair, drifting identity, or a policy block.
+description: Use when writing image or video prompts for Google Flow (the flow MCP, Nano Banana, Veo, Omni), planning keyframes for a clip, putting a real person into a scene from reference photos, or batch-generating story scenes; also when Flow output has vague hands, wrong hair, drifting identity, or a policy block.
 ---
 
 # Writing Flow Scene Prompts
@@ -59,7 +59,7 @@ Prefix the numbered scene cards with: *"Generate one unique 16:9 cinematic image
 |---|---|---|
 | "takes the mask off" | Mask rolled up, no hand in frame | Checklist: hand, contact point, grip |
 | Relying on refs for hair | Generic straight hair | Name the texture in slot 2 as well |
-| Regenerating the untouched source still | Policy block, and flow-mcp can hang | Use the source as first_frame |
+| Regenerating the untouched source still | Policy block, and the flow MCP can hang | Use the source as first_frame |
 | Asking Veo for 6s | Comes out at 8s anyway | Omni 6s, or Veo 8s + trim |
 | Text-only description of the user | Likeness drifts | Real face + full-body photos as refs |
 
