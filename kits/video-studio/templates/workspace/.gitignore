@@ -1,0 +1,14 @@
+.env
+.DS_Store
+node_modules/
+flow-out/
+# media stays out of git: footage, references, voiceover, renders
+*.mp4
+*.mov
+*.m4v
+*.webm
+*.mkv
+*.mp3
+*.wav
+*.m4a
+*.aac

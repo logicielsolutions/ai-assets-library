@@ -34,6 +34,11 @@
       "name": "context-bar",
       "source": "./mods/context-bar",
       "description": "Context fill and the live plan, task list or current step in one line above the prompt; /progress opens a Progress pane."
+    },
+    {
+      "name": "video-studio",
+      "source": "./kits/video-studio",
+      "description": "Make videos with Claude Code: /video-studio:setup builds the workspace, then drop references in inbox/ and run /video-studio:make-video."
     }
   ]
 }
