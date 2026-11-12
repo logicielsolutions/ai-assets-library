@@ -10,6 +10,7 @@ Status: v0.5, Week 2 of the agent-memory specialisation. Scores slightly above Z
 - **recall**: returns the facts relevant to a question, as they stood on a given date, oldest first so changes read in order
 - **sources**: lists the conversations a recalled fact came from
 - **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail.
+- **extraction rules** (automatic): each user's memory tells Zep to keep contact details (email, phone, preferred channel) as facts, and to skip facts about the assistant itself ("Priya works at the hotel"). Turn off with `Memory(extract_rules=False)`.
 - **one language** (optional): `Memory(language="English")` stores chats in other languages translated, so a Hindi or Hinglish call becomes English facts that an English question finds. Without it, Zep writes facts in the chat's own language. One extra model call, only for chats that need it.
 - **updates** (automatic): when a fact changes, Zep gives the old one an end date; recall shows it as "no longer true" next to the new one
 - **expiry** (automatic): one-off arrangements that name a date (a cake for 16 October, a late checkout) get an end date when stored; recall labels them once that date has passed
@@ -123,6 +124,43 @@ mem.clean_up("user-01", today="2026-11-03")   # run daily
 | `<ASSISTANT_NAME>` | How the screen refers to the assistant, e.g. "Acme's support bot" |
 | `<PRESET_OR_POLICY>` | `"generic"`, `"support"`, `"hotel"`, `"hr"`, or your own `Policy(...)` |
 | `<APP_NAME>` | Prefix for Zep user ids, so apps sharing one Zep project don't collide |
+
+## Plug into any agent
+
+Any agent, whether chat, voice or a Slack bot, needs two hooks: one before the conversation starts and one after it ends. Key memory by something stable for the user, such as a phone number, an email or a Slack user id.
+
+```python
+import threading
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from agent_memory import Memory
+
+mem = Memory(owner="Priya, the hotel's receptionist", namespace="hotel", policy="hotel", language="English")
+pool = ThreadPoolExecutor(4)
+
+def before_conversation(user_id):            # e.g. a voice agent's pre-call hook
+    """What to put in the system prompt. Gives up after 2.5 s so the greeting is never late."""
+    try:
+        facts = pool.submit(mem.recall, user_id, "Who is this user and what do they prefer?").result(timeout=2.5)
+        return "\n".join(f.line() for f in facts)
+    except (TimeoutError, Exception):
+        return ""
+
+def after_conversation(user_id, conversation_id, messages, date):   # e.g. a call-ended webhook
+    """messages: [{"role": "user" | "assistant", "text": ...}]. remember() takes 10-30 s, so run it in the background."""
+    threading.Thread(target=mem.remember, args=(user_id, conversation_id, messages, date), daemon=True).start()
+```
+
+Then tell the agent to use the memory, in its system prompt:
+
+```
+What we remember about this user from earlier conversations (one fact per line, oldest first):
+{memory}
+- Use their name and preferences, and don't ask for them again.
+- A fact marked "no longer true" or "over since" is old: don't act on it.
+- If nothing is remembered, never pretend to know the user.
+```
+
+The hotel voice agent (Dograh, Hindi and English calls) uses exactly these two hooks. In a test with 5 returning guests, memory on vs off: greeted by name 5/5 vs 0/5, the usual room picked without asking 5/5 vs 1/5, and recall took 0.3-0.4 s before the greeting.
 
 ## Results so far
 

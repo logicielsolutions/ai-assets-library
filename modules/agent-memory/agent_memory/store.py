@@ -66,6 +66,8 @@ Return JSON: {{"lines": ["<line 0 in {language}>", ...]}} with exactly {n} lines
 # Text that needs translating before it is stored: Indic scripts, or Hindi written in Latin letters.
 _NOT_ENGLISH = re.compile(r"[\u0900-\u0DFF]|\b(hai|hain|mujhe|mera|meri|chahiye|nahi|aap|kar do|kar lo|ke liye|bhej\w*|batay\w*|bataa\w*)\b", re.I)
 
+_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+
 _DATED = re.compile(r"\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t|tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}/\d{1,2}\b", re.I)
 
 EXPIRY_PROMPT = """These facts were just saved from {owner}'s chat with a user, dated {date}.
@@ -105,7 +107,8 @@ class Fact:
 class Memory:
     def __init__(self, owner="the assistant", namespace="mem", zep_api_key=None,
                  screen=None, k=10, wait=True, expiry=True, policy=None,
-                 lessons_path=None, notify=None, claims_to_lessons=False, language=None):
+                 lessons_path=None, notify=None, claims_to_lessons=False, language=None,
+                 skip_assistant_facts=True):
         from zep_cloud.client import Zep
         self.z = Zep(api_key=zep_api_key or os.environ["ZEP_API_KEY"])
         self.ns = namespace
@@ -121,6 +124,10 @@ class Memory:
         self.lessons = Lessons(self, lessons_path, notify=notify)
         self.claims_to_lessons = claims_to_lessons
         self.language = language   # e.g. "English": chats in other languages are stored translated
+        # recall skips facts about the assistant itself ("Priya works at the hotel"): they fill slots, say nothing
+        # about the user. The name is the owner up to the first comma ("Priya, the receptionist" -> "Priya").
+        name = owner.split(",")[0].strip()
+        self._self_fact = re.compile(rf"^{re.escape(name)}\b", re.I) if skip_assistant_facts and name else None
 
     # ---- ids -------------------------------------------------------------
     def _graph(self, user):
@@ -145,6 +152,8 @@ class Memory:
             uuid = self._add(user, text, {"user": user, "conversation": conversation, "date": date})
             if self.expiry and self.wait:
                 self._set_expiry(user, uuid, date)
+            if self.wait:
+                self._keep_contacts(user, uuid, kept, {"user": user, "conversation": conversation, "date": date})
         for c in changes:
             if self.claims_to_lessons and (c["action"] == "drop" or c.get("partial")):
                 # a user's claim about everyone is never stored as theirs; staff can still check it
@@ -170,10 +179,39 @@ class Memory:
         new = [re.sub(r"^\d+\.\s*(user|assistant):\s*", "", t.strip()) for t in new]
         return [{**m, "text": t} for m, t in zip(messages, new)]
 
-    def _add(self, user, text, source):
+    def _fresh(self, user, fn):
+        """Run fn(graph); if Zep says the graph is gone (the user was deleted and created again while this
+        process kept the old id), look the user up again and retry once."""
+        from zep_cloud.errors import NotFoundError
+        try:
+            return fn(self._graph(user))
+        except NotFoundError:
+            self._graphs.pop(f"{self.ns}-{user}", None)
+            return fn(self._graph(user))
+
+    def _keep_contacts(self, user, episode, kept, source):
+        """Zep often leaves an email out of the facts. Add it as one fact when the stored chat has it."""
+        emails = {m for x in kept if x["role"] == "user" for m in _EMAIL.findall(x["text"])}
+        if not emails:
+            return 0
+        from zep_cloud.types import EdgeInput, EdgeNodeRef
         g = self._graph(user)
-        ep = self.z.graph.episode.add(g, data=text, type="message", reference_time=f"{source['date']}T12:00:00Z",
-                                      source_description=f"conversation {source['conversation']}", metadata=source)
+        known = " ".join(e.fact for e in self.z.graph.edge.list(g, page_size=100)).lower()
+        new = [EdgeInput(fact=f"The user's email address is {m}.", fact_name="HAS_EMAIL",
+                         source_node=EdgeNodeRef(name="the user"), target_node=EdgeNodeRef(name=m),
+                         valid_at=f"{source['date']}T12:00:00Z", metadata=source)
+               for m in sorted(emails) if m.lower() not in known]
+        if new:
+            try:
+                self.z.graph.edge.add(g, edges=new)
+            except Exception:
+                return 0
+        return len(new)
+
+    def _add(self, user, text, source):
+        ep = self._fresh(user, lambda g: self.z.graph.episode.add(g, data=text, type="message", reference_time=f"{source['date']}T12:00:00Z",
+                                      source_description=f"conversation {source['conversation']}", metadata=source))
+        g = self._graph(user)
         self._episodes[ep.episode.uuid_] = source
         if self.wait:
             self._wait(g, ep.episode.uuid_)
@@ -207,10 +245,14 @@ class Memory:
         Zep picks the facts by relevance; they come back oldest first, so a change of plan
         or a date sequence reads in the order it happened (+2.6/80 on the test bench).
         Approved lessons that match the query are added at the end (lessons=False skips them)."""
-        g = self._graph(user)
-        edges = self.z.graph.search_edges(g, query=query[:400], page_size=self.k * 2)
-        facts = []
+        edges = self._fresh(user, lambda g: self.z.graph.search_edges(g, query=query[:400], page_size=self.k * 2))
+        facts, seen = [], set()
         for e in edges:
+            if self._self_fact and self._self_fact.match(e.fact):
+                continue
+            if e.fact.strip().lower() in seen:
+                continue   # Zep sometimes stores the same fact twice from one chat
+            seen.add(e.fact.strip().lower())
             start = str(e.valid_at or "")[:10]
             if as_of and start and start > as_of:
                 continue
