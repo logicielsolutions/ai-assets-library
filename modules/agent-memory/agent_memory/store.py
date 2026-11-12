@@ -20,9 +20,11 @@ Expiry: one-off arrangements (a room request for one trip, a cake, a late checko
 date when stored; recall labels them once past, and clean_up() deletes them after a grace period.
 """
 import datetime as dt
+import itertools
 import os
 import re
 import time
+import warnings
 from dataclasses import dataclass, field
 
 from . import policy as _policy
@@ -133,9 +135,10 @@ class Memory:
     def _graph(self, user):
         uid = f"{self.ns}-{user}"
         if uid not in self._graphs:
+            from zep_cloud.errors import NotFoundError
             try:
                 u = self.z.user.lookup(user_id=uid)
-            except Exception:
+            except NotFoundError:
                 u = self.z.user.create(user_id=uid)
             self._graphs[uid] = u.graph_uuid
         return self._graphs[uid]
@@ -189,6 +192,10 @@ class Memory:
             self._graphs.pop(f"{self.ns}-{user}", None)
             return fn(self._graph(user))
 
+    def _live(self, user):
+        """The user's graph id, checked against Zep (one small read) so a stale cached id is replaced."""
+        return self._fresh(user, lambda g: (self.z.graph.edge.list(g, page_size=1), g)[1])
+
     def _keep_contacts(self, user, episode, kept, source):
         """Zep often leaves an email out of the facts. Add it as one fact when the stored chat has it."""
         emails = {m for x in kept if x["role"] == "user" for m in _EMAIL.findall(x["text"])}
@@ -227,8 +234,9 @@ class Memory:
             except Exception:
                 left = []
             if not left:
-                return
+                return True
             time.sleep(2)
+        return False
 
     def _wait(self, graph, episode, timeout=600):
         t0 = time.time()
@@ -271,8 +279,7 @@ class Memory:
 
     def sources(self, user, fact):
         """Where a fact came from: [{"user", "conversation", "date"}], one per stored conversation."""
-        g = self._graph(user)
-        return [self._source(g, ep) for ep in fact.episodes]
+        return self._fresh(user, lambda g: [self._source(g, ep) for ep in fact.episodes])
 
     def _source(self, graph, episode):
         if episode not in self._episodes:
@@ -288,13 +295,14 @@ class Memory:
         about it. Returns the closest facts, each with the stored chats behind it and the lines in
         those chats that share words with the fact:
         [{"fact", "uuid", "date", "sources": [{"conversation", "episode", "date", "lines"}]}]"""
-        g = self._graph(user)
-        return [self._trace(g, e) for e in self.z.graph.search_edges(g, query=text[:400], page_size=k)]
+        def run(g):
+            edges = itertools.islice(self.z.graph.search_edges(g, query=text[:400], page_size=k), k)
+            return [self._trace(g, e) for e in edges]
+        return self._fresh(user, run)
 
     def trace_fact(self, user, fact_uuid):
         """The same, for one fact by its id (Fact.uuid)."""
-        g = self._graph(user)
-        return self._trace(g, self.z.graph.edge.get(g, fact_uuid))
+        return self._fresh(user, lambda g: self._trace(g, self.z.graph.edge.get(g, fact_uuid)))
 
     def _trace(self, g, e):
         words = set(re.findall(r"[a-z0-9]{4,}", e.fact.lower()))
@@ -313,12 +321,12 @@ class Memory:
 
     def remove_fact(self, user, fact_uuid):
         """Delete one fact. Its source chat stays; use forget_conversation() to drop the chat too."""
-        self.z.graph.edge.delete(self._graph(user), fact_uuid)
+        self._fresh(user, lambda g: self.z.graph.edge.delete(g, fact_uuid))
 
     # ---- forget ----------------------------------------------------------
     def forget_conversation(self, user, conversation):
         """Delete every stored episode from one conversation (and the facts Zep built from it)."""
-        g = self._graph(user)
+        g = self._live(user)
         gone = 0
         for ep in self.z.graph.episode.list(g, page_size=100):
             if (ep.metadata or {}).get("conversation") == conversation:
@@ -329,7 +337,7 @@ class Memory:
     def forget(self, user, about, request, remove=(), before=None, keep_episode=None):
         """Act on "forget X": delete the facts about X, and store every earlier conversation that
         mentions it again without the detail. Returns counts, never the detail itself."""
-        g = self._graph(user)
+        g = self._live(user)
         # The request's own conversation stays: "asked to delete the card, will pay at check-in" is
         # what lets the assistant say why the card is gone. Zep also links older facts to the request
         # chat when it mentions them ("the phone number I gave you"), so only facts built from the
@@ -378,11 +386,21 @@ class Memory:
             for p in pats:
                 new = p.sub("[removed]", new)
             if new != text:
-                self.z.graph.episode.delete(g, ep.uuid_)
-                self._wait_gone(g, ep.uuid_)   # deletion runs in the background; re-adding before it ends loses facts
                 src = {"user": meta.get("user", user), "conversation": meta.get("conversation", "?"),
                        "date": meta.get("date") or str(ep.reference_time or "")[:10]}
-                uuid = self._add(user, new, src)
+                self.z.graph.episode.delete(g, ep.uuid_)
+                if not self._wait_gone(g, ep.uuid_):   # re-adding before the delete ends loses facts
+                    warnings.warn(f"forget: episode {ep.uuid_} still had facts after the wait; re-adding anyway")
+                try:
+                    uuid = self._add(user, new, src)
+                except TimeoutError:
+                    raise   # stored, only slow to process: a retry would store it twice
+                except Exception:
+                    try:   # one retry: the old chat is already gone, so a failed add would lose the whole chat
+                        uuid = self._add(user, new, src)
+                    except Exception as e:
+                        raise RuntimeError(f"forget: conversation {src['conversation']} was deleted but its cleaned "
+                                           f"copy could not be stored ({e}); its text without the detail is lost") from e
                 if ep.uuid_ == keep_episode:
                     request_copy = uuid   # its "asked to forget [removed]" facts are the record, they stay
                 else:
@@ -434,7 +452,7 @@ class Memory:
     def clean_up(self, user, today=None, keep_days=30, dry_run=False):
         """The daily clean-up: delete one-off facts that ended more than keep_days ago.
         dry_run=True only counts them."""
-        g = self._graph(user)
+        g = self._live(user)
         today = today or dt.date.today().isoformat()
         cutoff = (dt.date.fromisoformat(today) - dt.timedelta(days=keep_days)).isoformat()
         gone = 0

@@ -14,6 +14,7 @@ Approved lessons are stored in their own Zep graph, shared by all users, and den
 leaves nothing behind there.
 """
 import datetime as dt
+import itertools
 import json
 import threading
 import uuid
@@ -112,5 +113,5 @@ class Lessons:
     def recall(self, query):
         from .store import Fact
         g = self.mem._graph(LESSONS_USER)
-        edges = self.mem.z.graph.search_edges(g, query=query[:400], page_size=self.k)
+        edges = itertools.islice(self.mem.z.graph.search_edges(g, query=query[:400], page_size=self.k), self.k)
         return [Fact(e.fact, str(e.created_at or "")[:10], uuid=e.uuid_, lesson=True) for e in edges]

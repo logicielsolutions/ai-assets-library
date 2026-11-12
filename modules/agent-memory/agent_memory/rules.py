@@ -7,7 +7,8 @@ Two layers:
    and requests to forget something. What counts as each is set per product by a Policy.
 2. Regex patterns as a backstop for anything number-shaped the LLM missed.
 
-Results are cached on disk by content hash, so re-screening the same conversation is free.
+Results are cached on disk by content hash, so re-screening the same conversation is free. The cache keeps
+where each removed span is in the transcript, never the span itself; chats with a forget request aren't cached.
 """
 import hashlib
 import json
@@ -20,19 +21,37 @@ from . import policy as _policy
 
 NEVER_STORE = list(_policy.NEVER_STORE_DEFAULT)
 
-# Backstop for forget requests the model misses: plain "forget", or delete/remove/erase ... from memory.
-FORGET_RE = re.compile(r"\bforget\b|\b(delete|remove|erase)\b[^.?!]*\b(memory|records|chat|system)\b"
-                       r"|\bdon'?t want (it|this|that)?\s*(saved|stored|kept)", re.I)
+# Backstop for forget requests the model misses: "forget my/that/what/about/everything ...", delete/remove/erase
+# ... from your memory or records, "don't want it saved". Not "don't forget the cake" or "forget it, I'll walk".
+FORGET_RE = re.compile(r"(?<!n't )(?<!n’t )(?<!nt )(?<!not )(?<!never )(?<!you )(?<!always )"
+                       r"\bforget (my|that|what|about(?! (it|that)\b)|everything|all (of )?(it|that|my))\b"
+                       r"|\b(delete|remove|erase)\b[^.?!]*\b(from|in) (your|the|my) (memory|records)\b"
+                       r"|\bdon['’]?t want (it|this|that)?\s*(saved|stored|kept)", re.I)
 
 # Number-shaped never-store details. Phone numbers (10 digits) are allowed: they're contact details.
+def _luhn(digits):
+    total = sum(int(d) if i % 2 == 0 else sum(divmod(int(d) * 2, 10)) for i, d in enumerate(reversed(digits)))
+    return total % 10 == 0
+
+
+def _long_number(m):
+    """Card or bank account. Two ISO dates side by side ("2026-06-03 2026-06-10") are kept unless they
+    pass the card checksum."""
+    s = m.group(0)
+    if re.search(r"\d{4}-\d\d-\d\d", s) and not _luhn(re.sub(r"\D", "", s)):
+        return s
+    return "[number removed]"
+
+
 PATTERNS = [
-    (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[number removed]"),            # card or bank account
-    (re.compile(r"\b\d{4}\s\d{4}\s\d{4}\b"), "[ID number removed]"),         # Aadhaar
+    (re.compile(r"\b(?:\d[ -]?){13,19}\b"), _long_number),                 # card or bank account
+    (re.compile(r"\b\d{4}[ -]\d{4}[ -]\d{4}\b"), "[ID number removed]"),      # Aadhaar, grouped
+    (re.compile(r"((?i:aadhaa?r|आधार)\D{0,25})\b\d{12}\b"), r"\1[ID number removed]"),   # unspaced: only when named
     (re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b"), "[bank code removed]"),       # IFSC
     (re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b"), "[ID number removed]"),         # PAN
     (re.compile(r"(?i)\b(cvv|cvc)\D{0,6}\d{3,4}\b"), "[card details removed]"),
     (re.compile(r"(?i)\b(expir\w*|exp\.?|valid thru)\D{0,12}\d{1,2}\s?/\s?\d{2,4}"), "[card details removed]"),
-    (re.compile(r"((?i:passport)\D{0,25})\b[A-Z0-9]{7,9}\b"), r"\1[ID number removed]"),
+    (re.compile(r"((?i:passport|पासपोर्ट)\D{0,25})\b(?=[A-Za-z]*\d)[A-Za-z0-9]{7,9}\b"), r"\1[ID number removed]"),
 ]
 
 PROMPT = """You screen chat transcripts before they are saved to {owner}'s long-term memory.
@@ -95,6 +114,23 @@ def _redact(text, change):
     if hit or change.get("action") == "forget":
         return text
     return change.get("text") or text
+
+
+def _freeze(changes, transcript):
+    """For the disk cache: each removed span becomes its [start, end] places in the transcript."""
+    out = []
+    for c in changes:
+        if not isinstance(c, dict):
+            continue
+        spans = [x for x in c.get("remove") or [] if isinstance(x, str) and len(x.strip()) > 1]
+        at = [[m.start(), m.end()] for x in spans for m in _span_pattern(x.strip()).finditer(transcript)]
+        out.append({k: v for k, v in c.items() if k not in ("remove", "text")} | {"at": at})
+    return out
+
+
+def _thaw(changes, transcript):
+    return [{k: v for k, v in c.items() if k != "at"} | {"remove": [transcript[a:b] for a, b in c["at"]]}
+            if "at" in c else c for c in changes]   # files from before 0.6.1 still carry "remove"
 
 
 def regex_scrub(text):
@@ -162,7 +198,7 @@ class Screen:
         key = hashlib.sha256(f"{self.model}|{prompt}|{CONFIRM}".encode()).hexdigest()[:16]
         hit = self.cache / f"{key}.json" if self.cache else None
         if hit and hit.exists():
-            return json.loads(hit.read_text())
+            return _thaw(json.loads(hit.read_text()), transcript)
         out = self._ask(prompt, json_mode=True)
         try:
             changes = json.loads(out.strip().removeprefix("```json").removesuffix("```")).get("changes", [])
@@ -176,8 +212,8 @@ class Screen:
                 line = lines[i].split(": ", 1)[-1]
                 before = next((l.split(": ", 1)[-1] for l in reversed(lines[:i]) if l.split(". ", 1)[-1].startswith("user:")), "")
                 c["confirmed"] = self._ask(CONFIRM.format(before=before, line=line)).strip().lower().startswith("yes")
-        if hit:
-            hit.write_text(json.dumps(changes, indent=1))
+        if hit and not any(isinstance(c, dict) and c.get("action") == "forget" for c in changes):
+            hit.write_text(json.dumps(_freeze(changes, transcript), indent=1))
         return changes
 
     def _prompt(self, transcript):
@@ -187,18 +223,12 @@ class Screen:
                              kinds=" | ".join(p.never_store))
 
     def ask_json(self, prompt):
-        """One JSON-mode call, cached on disk by prompt hash (used by forget and expiry)."""
-        key = hashlib.sha256(f"{self.model}|json|{prompt}".encode()).hexdigest()[:16]
-        hit = self.cache / f"j-{key}.json" if self.cache else None
-        if hit and hit.exists():
-            return json.loads(hit.read_text())
+        """One JSON-mode call (used by forget, translation and expiry). Never cached: the answers name
+        the details a user asked to forget."""
         try:
-            out = json.loads(self._ask(prompt, json_mode=True))
+            return json.loads(self._ask(prompt, json_mode=True))
         except json.JSONDecodeError:
-            out = {}
-        if hit:
-            hit.write_text(json.dumps(out, indent=1))
-        return out
+            return {}
 
     def _ask(self, prompt, json_mode=False):
         req = {"model": self.model, "temperature": 0, "messages": [{"role": "user", "content": prompt}]}

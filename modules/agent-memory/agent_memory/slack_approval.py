@@ -21,6 +21,7 @@ nobody answers in time is denied with the reason "no answer in time"; it can be 
 """
 import queue
 import threading
+import time
 
 
 class _Recording:
@@ -105,14 +106,21 @@ class SlackLessonApproval:
             batch = [self.queue.get()]
             while not self.queue.empty():
                 batch.append(self.queue.get_nowait())
-            self.net.start_run(name="agent-memory lessons")
-            for i, lesson in enumerate(batch):
-                try:
-                    if self.handle(lesson) == "pending":
-                        self.queue.put(lesson)
-                except self.NetStop as e:   # the net stopped this batch; the rest wait for the next one
-                    self.log.append((lesson["id"], "pending", f"net stopped: {e.reason}"))
-                    for rest in batch[i:]:
-                        self.queue.put(rest)
-                    break
-            self.net.end_run("done")
+            i = 0
+            try:
+                self.net.start_run(name="agent-memory lessons")
+                for i, lesson in enumerate(batch):
+                    try:
+                        if self.handle(lesson) == "pending":
+                            self.queue.put(lesson)
+                    except self.NetStop as e:   # the net stopped this batch; the rest wait for the next one
+                        self.log.append((lesson["id"], "pending", f"net stopped: {e.reason}"))
+                        for rest in batch[i:]:
+                            self.queue.put(rest)
+                        break
+                self.net.end_run("done")
+            except Exception as e:   # a Slack or Zep error: keep the worker alive, retry the rest later
+                for rest in batch[i:]:
+                    self.log.append((rest["id"], "pending", f"error: {e!r}"))
+                    self.queue.put(rest)
+                time.sleep(30)

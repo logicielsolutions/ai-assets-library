@@ -10,7 +10,6 @@ Status: v0.6, Week 3 of the agent-memory specialisation. Plugged into the hotel 
 - **recall**: returns the facts relevant to a question, as they stood on a given date, oldest first so changes read in order
 - **sources**: lists the conversations a recalled fact came from
 - **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail.
-- **extraction rules** (automatic): each user's memory tells Zep to keep contact details (email, phone, preferred channel) as facts, and to skip facts about the assistant itself ("Priya works at the hotel"). Turn off with `Memory(extract_rules=False)`.
 - **contact details** (automatic): an email the user gives is kept as a fact even when Zep leaves it out.
 - **assistant facts skipped** (automatic): recall leaves out facts about the assistant itself ("Priya works at the hotel"), which take slots and say nothing about the user. The name is the `owner` up to the first comma; `skip_assistant_facts=False` turns it off.
 - **one language** (optional): `Memory(language="English")` stores chats in other languages translated, so a Hindi or Hinglish call becomes English facts that an English question finds. Without it, Zep writes facts in the chat's own language. One extra model call, only for chats that need it.
@@ -47,7 +46,7 @@ Every conversation passes through `Screen` before it is stored:
 - **Redacted**: card, bank, ID document, health and salary details. The model lists the exact words to remove and the code removes each one, so the rest of the line is kept.
 - A regex pass catches number-shaped details the model missed.
 
-Decisions are cached on disk by content hash, so re-screening the same conversation is free.
+With `cache_dir` set, decisions are cached on disk by content hash, so re-screening the same conversation is free. The cache stores where each removed span was, never the text itself, and chats with a forget request are not cached. Delete cache folders made by versions before 0.6.1: they kept the removed text.
 
 ## Fit it to your product
 
