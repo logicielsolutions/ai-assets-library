@@ -1,0 +1,9 @@
+{
+  "name": "video-studio",
+  "version": "0.1.1",
+  "description": "Make videos with Claude Code: /video-studio:setup builds your video workspace (folders, .env, HyperFrames, optional Google Flow), then drop references in inbox/ and run /video-studio:make-video.",
+  "author": {
+    "name": "Manjot",
+    "email": "manjot@logiciel.io"
+  }
+}

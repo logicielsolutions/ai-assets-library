@@ -34,6 +34,13 @@ Mods change Claude Code itself: status-line entries, panes, toasts, slash comman
 | [`guard`](mods/guard/) | Asks before a prompt with an API key, token or password is sent (redact it, send as typed, or edit), hides them in tool output, and asks before Claude writes or runs one; `/guard setup` adds optional local PII detection (Presidio) | `/plugin install guard --marketplace logicielsolutions/ai-assets-library` |
 | [`context-bar`](mods/context-bar/) | One line above the prompt with context fill and the live plan, task list or current step; `/progress` opens a pane with tasks, plan and every tool step | `/plugin install context-bar --marketplace logicielsolutions/ai-assets-library` |
 
+## Kits
+
+Kits are plugins that set up a whole workflow: skills, scripts and a workspace template. Each one lives in [`kits/`](kits/).
+
+| Kit | What it does | Install |
+|-----|-------------|---------|
+| [`video-studio`](kits/video-studio/) | Make videos with Claude Code. `/video-studio:setup` builds a video workspace (folders, brand file, `.env`, HyperFrames, optional Google Flow); drop references in `inbox/` and run `/video-studio:make-video` | `/plugin install video-studio --marketplace logicielsolutions/ai-assets-library` |
 
 ## Modules
 

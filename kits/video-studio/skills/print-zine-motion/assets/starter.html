@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>print-zine-motion starter</title>
+    <!-- Starter: an 8 s composition that shows the whole system. Copy to a HyperFrames project as index.html.
+         Fonts go in assets/fonts/. To add your voice/music track, uncomment the <audio> line and set data-duration. -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* print-zine-motion: drop-in styles. Put fonts in assets/fonts/ (Satoshi from fontshare.com, JetBrains Mono). */
+      @font-face { font-family: "Satoshi"; src: url("assets/fonts/Satoshi-Black.otf") format("opentype"); font-weight: 900; }
+      @font-face { font-family: "Satoshi"; src: url("assets/fonts/Satoshi-Bold.otf") format("opentype"); font-weight: 700; }
+      @font-face { font-family: "Satoshi"; src: url("assets/fonts/Satoshi-Medium.otf") format("opentype"); font-weight: 500; }
+      @font-face { font-family: "JBMono"; src: url("assets/fonts/JetBrainsMono-Medium.ttf") format("truetype"); font-weight: 500; }
+      
+      :root {
+        --paper: #faf8f5; --sand: #e3d9c8; --sand2: #cfc2ab;
+        --ink: #0f0f10; --char: #444545; --accent: #a41e21;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--paper);
+        font-family: "Satoshi", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+      #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+      .layer { position: absolute; inset: 0; }
+      
+      /* backgrounds */
+      .paperbg { position: absolute; inset: 0; background: var(--paper); }
+      .burst { position: absolute; left: 50%; top: 50%; width: 3400px; height: 3400px; margin: -1700px 0 0 -1700px; border-radius: 50%;
+        background: repeating-conic-gradient(from 0deg, var(--sand) 0deg 7.5deg, var(--paper) 7.5deg 15deg); }
+      .gridbg { position: absolute; inset: 0; background-color: var(--paper);
+        background-image: linear-gradient(var(--sand) 2px, transparent 2px), linear-gradient(90deg, var(--sand) 2px, transparent 2px); background-size: 60px 60px; }
+      
+      /* cards */
+      .card { position: absolute; inset: 0; background: var(--paper); border: 5px solid var(--ink); border-radius: 22px; box-shadow: 18px 18px 0 var(--ink); overflow: hidden; }
+      .bar { height: 64px; border-bottom: 5px solid var(--ink); display: flex; align-items: center; gap: 14px; padding: 0 24px; background: var(--sand); }
+      .bar i { display: block; width: 20px; height: 20px; border: 4px solid var(--ink); border-radius: 50%; }
+      .bar .url { flex: 1; height: 26px; margin-left: 18px; border: 4px solid var(--ink); border-radius: 13px; background: var(--paper); }
+      .pill { display: block; height: 26px; border-radius: 13px; background: var(--sand2); }
+      .pill.ink { background: var(--ink); }
+      
+      /* giant kinetic type */
+      .giant { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .g { display: block; font-weight: 900; line-height: .82; letter-spacing: -.035em; color: var(--ink); text-shadow: 9px 7px 0 var(--sand2); white-space: nowrap; }
+      .kick { display: block; font: 700 96px "Satoshi", sans-serif; margin-bottom: 18px; white-space: nowrap; }
+      .kick span { display: inline-block; margin: 0 10px; }
+      .half { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .half.top { clip-path: polygon(0 0, 100% 0, 100% 46%, 0 58%); }
+      .half.bot { clip-path: polygon(0 58%, 100% 46%, 100% 100%, 0 100%); }
+      
+      /* subtitle strip */
+      .sub { position: absolute; left: 70px; bottom: 74px; display: flex; gap: 0 16px; align-items: baseline; background: var(--paper);
+        border: 3px solid var(--ink); padding: 14px 26px 18px; box-shadow: 9px 9px 0 var(--ink); transform-origin: 0% 100%; }
+      .sub .w { display: inline-block; font: 700 50px "Satoshi", sans-serif; letter-spacing: -.01em; white-space: nowrap; }
+      .sub .w.em { text-decoration: underline; text-decoration-thickness: 6px; text-underline-offset: 8px; }
+      
+      /* corner meter */
+      .meter { position: absolute; top: 44px; left: 52px; background: var(--paper); border: 3px solid var(--ink); padding: 10px 16px 12px; box-shadow: 7px 7px 0 var(--sand2); min-width: 260px; }
+      .meter .k { font: 500 16px "JBMono", monospace; letter-spacing: .1em; color: var(--char); }
+      .meter .v { font: 900 54px "Satoshi", sans-serif; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+      
+      /* thread object */
+      .thread { position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: var(--accent); }
+      
+      /* footage: wrap <video> in an untimed .vwrap, add a timed .dots layer with the same window */
+      .vwrap { position: absolute; }
+      .vwrap video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+      .dots { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+        background-image: radial-gradient(circle, rgba(15,15,16,.24) 1.5px, transparent 2.1px); background-size: 7px 7px; mix-blend-mode: multiply; }
+      
+      /* print texture, always on top */
+      #grain { position: absolute; inset: -40px; pointer-events: none; opacity: .5; mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .42  0 0 0 0 .38  0 0 0 .55 0'/></filter><rect width='600' height='600' filter='url(%23n)'/></svg>");
+        background-size: 600px 600px; }
+      #fibers { position: absolute; inset: 0; pointer-events: none; opacity: .35; mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><filter id='f'><feTurbulence type='turbulence' baseFrequency='.012 .06' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .5  0 0 0 0 .44  0 0 0 .25 0'/></filter><rect width='900' height='900' filter='url(%23f)'/></svg>"); }
+      #vignette { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 220px rgba(80,70,55,.22); }
+      #flash { position: absolute; inset: 0; background: var(--paper); opacity: 0; }
+      /* starter-only layout */
+      #demo { position: absolute; left: 400px; top: 240px; width: 1120px; height: 640px; }
+      .chat { position: absolute; left: 30px; top: 100px; width: 380px; display: flex; flex-direction: column; gap: 18px; }
+      #chart { position: absolute; left: 470px; top: 100px; width: 600px; height: 480px; }
+      #confetti { position: absolute; left: 960px; top: 500px; width: 0; height: 0; }
+      .spark { position: absolute; width: 90px; height: 90px; }
+      #route-card { position: absolute; left: 980px; top: 200px; width: 800px; height: 640px; }
+      #route-svg { position: absolute; left: 0; top: 64px; width: 790px; height: 566px; }
+      #g-hook .g { font-size: 330px; }
+      #g-oops .g { font-size: 520px; }
+      #side-word { position: absolute; left: 100px; top: 380px; font: 900 190px "Satoshi", sans-serif; letter-spacing: -.035em; text-shadow: 8px 7px 0 var(--sand2); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="8" data-width="1920" data-height="1080">
+      <!-- <audio id="track" src="assets/audio/track.wav" data-start="0" data-duration="8" data-volume="1"></audio> -->
+      <div id="cam">
+        <!-- scene 1: the claim (0 - 3.9) -->
+        <section id="sc1" class="clip layer" data-start="0" data-duration="3.9" data-track-index="0">
+          <div class="burst" id="burst"></div>
+          <div id="demo"><div class="card">
+            <div class="bar"><i></i><i></i><i></i><span class="url"></span><span class="thread" id="live" style="position:relative;margin:0"></span></div>
+            <div class="chat"><span class="pill" style="width:260px"></span><span class="pill ink" style="width:200px;align-self:flex-end"></span><span class="pill" style="width:320px"></span><span class="pill ink" style="width:150px;align-self:flex-end"></span><span class="pill" style="width:280px"></span></div>
+            <svg id="chart" viewBox="0 0 600 480"><path id="up" d="M0 450 L100 420 L200 390 L300 320 L400 230 L500 120 L600 30" fill="none" stroke="#0f0f10" stroke-width="12" stroke-linejoin="round"/>
+              <path id="flat" d="M0 450 L100 420 L200 390 L300 320 L340 450 L600 450" fill="none" stroke="#0f0f10" stroke-width="12" stroke-linejoin="round" opacity="0"/></svg>
+          </div></div>
+          <div id="confetti"></div>
+        </section>
+        <!-- scene 2: the turn (3.9 - 8) -->
+        <section id="sc2" class="clip layer" data-start="3.9" data-duration="4.1" data-track-index="0">
+          <div class="gridbg"></div>
+          <div id="side-word">MAP.</div>
+          <div id="route-card"><div class="card"><div class="bar"><i></i><i></i><i></i><span class="url"></span></div>
+            <svg id="route-svg" viewBox="0 0 790 566"><path id="route" d="M70 500 C 200 420, 150 290, 330 270 S 570 150, 710 70" fill="none" stroke="#0f0f10" stroke-width="10" stroke-linecap="round"/>
+              <circle id="dot2" cx="70" cy="500" r="16" fill="#a41e21"/></svg></div></div>
+        </section>
+
+        <div id="g-hook" class="clip giant" data-start="0.15" data-duration="1.3" data-track-index="5">
+          <div class="kick"><span id="k1">Ever</span><span id="k2">shipped</span><span id="k3">a</span></div>
+          <span class="g" id="hookword">DEMO?</span>
+          <span class="spark" id="sp0" style="left:280px;top:260px"></span><span class="spark" id="sp1" style="left:1560px;top:220px"></span><span class="spark" id="sp2" style="left:1650px;top:700px"></span><span class="spark" id="sp3" style="left:200px;top:740px"></span>
+        </div>
+        <div id="g-oops" class="clip giant" data-start="3.0" data-duration="0.85" data-track-index="5">
+          <div class="half top"><span class="g">OOPS.</span></div><div class="half bot"><span class="g">OOPS.</span></div>
+        </div>
+        <div id="sub1" class="clip sub" data-start="1.45" data-duration="1.5" data-track-index="6"></div>
+        <div id="sub2" class="clip sub" data-start="4.5" data-duration="3.5" data-track-index="6"></div>
+      </div>
+
+      <div class="meter clip" data-start="0" data-duration="8" data-track-index="7"><div class="k" id="meter-k">HYPE</div><div class="v" id="meter-v">12%</div></div>
+      <div id="grain" class="clip" data-start="0" data-duration="8" data-track-index="8"></div>
+      <div id="fibers" class="clip" data-start="0" data-duration="8" data-track-index="8"></div>
+      <div id="vignette" class="clip" data-start="0" data-duration="8" data-track-index="8"></div>
+      <div id="flash" class="clip" data-start="0" data-duration="8" data-track-index="8"></div>
+    </div>
+
+    <script>
+      // print-zine-motion: helpers bound to one paused GSAP timeline.
+      // usage: const Z = zine(tl, { seed: 7 }); Z.boil(T); Z.kick(2.4); ...
+      function zine(tl, opts = {}) {
+        let seed = opts.seed ?? 20261021;
+        const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296); // seeded: frame-exact renders
+        const R = (a, b) => a + rnd() * (b - a);
+        const cam = opts.cam ?? "#cam";
+        const Z = { rnd, R };
+      
+        // paper grain jumps to a new offset every 2 frames ("boil on twos")
+        Z.boil = (T, sel = "#grain") => {
+          const offs = [[0, 0], [-26, 14], [18, -32], [-8, -12], [34, 24], [-40, 6]];
+          for (let f = 0, i = 0; f < T; f += 2 / 30, i++) { const [x, y] = offs[i % offs.length]; tl.set(sel, { x, y }, f); }
+        };
+        // 4-frame camera hit on an action word
+        Z.kick = (t, a = 14) => [[a, -a * 0.6], [-a * 0.7, a * 0.5], [a * 0.4, a * 0.3], [0, 0]].forEach(([x, y], i) => tl.set(cam, { x, y }, t + i / 30));
+        // 2-frame paper flash
+        Z.flash = (t, o = 0.85, sel = "#flash") => { tl.set(sel, { opacity: o }, t); tl.set(sel, { opacity: 0 }, t + 2 / 30); };
+        // reset and slowly push the camera through a scene
+        Z.camReset = (t) => tl.set(cam, { x: 0, y: 0, rotation: 0, scale: 1 }, t);
+        Z.push = (t, d, s = 1.06) => tl.to(cam, { scale: s, duration: d, ease: "none" }, t);
+        // transitions
+        Z.whipIn = (sel, t, dir = 1) => tl.fromTo(sel, { x: dir * 2100, filter: "blur(24px)" }, { x: 0, filter: "blur(0px)", duration: 0.3, ease: "expo.out" }, t);
+        Z.whipOut = (sel, t, dir = 1) => tl.to(sel, { x: -dir * 2100, filter: "blur(24px)", duration: 0.2, ease: "expo.in" }, t);
+        Z.wipeUp = (sel, t) => tl.fromTo(sel, { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.25, ease: "expo.out" }, t);
+        Z.wipeDown = (sel, t) => tl.fromTo(sel, { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.22, ease: "expo.out" }, t);
+        Z.circleIn = (sel, t) => tl.fromTo(sel, { clipPath: "circle(0% at 50% 50%)" }, { clipPath: "circle(80% at 50% 50%)", duration: 0.3, ease: "expo.out" }, t);
+        // giant word slam
+        Z.slam = (sel, t, from = 1.9) => {
+          tl.fromTo(sel, { scale: from, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.14, ease: "expo.out" }, t);
+          tl.to(sel, { scale: 1.05, duration: 0.6, ease: "none" }, t + 0.14);
+        };
+        // a word falling in from above with a blur trail (kickers, subtitle words)
+        Z.drop = (sel, t) => tl.fromTo(sel, { y: -36, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "expo.out" }, t - 0.02);
+        // subtitle strip: words = [[time, "word", emphasis?], ...]; strip enters at `start`
+        Z.sub = (sel, start, words) => {
+          const box = document.querySelector(sel);
+          words.forEach(([t, w, em]) => {
+            const s = document.createElement("span");
+            s.className = "w" + (em ? " em" : "");
+            s.textContent = w;
+            box.appendChild(s);
+            Z.drop(s, Math.max(start + 0.02, t));
+          });
+          tl.fromTo(sel, { x: -60, rotation: -2 }, { x: 0, rotation: -1, duration: 0.25, ease: "expo.out" }, start);
+        };
+        // paper confetti burst from a container at (0,0)
+        Z.confetti = (boxSel, t, n = 90) => {
+          const box = document.querySelector(boxSel);
+          const cols = ["#0f0f10", "#cfc2ab", "#444545", "#e3d9c8"];
+          for (let i = 0; i < n; i++) {
+            const el = document.createElement("span");
+            el.style.position = "absolute";
+            const k = rnd(), col = cols[Math.floor(rnd() * cols.length)];
+            if (k < 0.45) { el.style.width = R(18, 46) + "px"; el.style.height = R(10, 26) + "px"; }
+            else if (k < 0.75) { const d = R(14, 30); el.style.width = d + "px"; el.style.height = d + "px"; el.style.borderRadius = "50%"; }
+            else { el.style.width = R(60, 130) + "px"; el.style.height = "9px"; el.style.borderRadius = "5px"; }
+            el.style.background = col;
+            if (col !== "#0f0f10" && col !== "#444545") el.style.outline = "3px solid #0f0f10";
+            box.appendChild(el);
+            const a = rnd() * Math.PI * 2, d = R(380, 1150);
+            tl.fromTo(el, { x: 0, y: 0, rotation: 0, scale: 0.2 }, { x: Math.cos(a) * d, y: Math.sin(a) * d * 0.62 - R(40, 220), rotation: R(-540, 540), scale: 1, duration: 2.2, ease: "expo.out" }, t + (i % 6) * 0.012);
+          }
+        };
+        // a counter (meter, stat) that shows the right value from frame 0
+        // pass init=false on the 2nd+ count of the same element so frame 0 keeps the first value
+        Z.count = (sel, from, to, t, d, suffix = "", init = true) => {
+          const o = { v: from };
+          if (init) tl.set(sel, { textContent: Math.round(from) + suffix }, 0);
+          tl.fromTo(o, { v: from }, { v: to, duration: d, ease: "power2.out", immediateRender: false, onUpdate: () => { document.querySelector(sel).textContent = Math.round(o.v) + suffix; } }, t);
+        };
+        return Z;
+      }
+      const tl = gsap.timeline({ paused: true });
+      const Z = zine(tl);
+      const T = 8;
+      Z.boil(T);
+      const spark = '<svg viewBox="0 0 90 90"><path d="M45 0 C49 34 56 41 90 45 C56 49 49 56 45 90 C41 56 34 49 0 45 C34 41 41 34 45 0Z" fill="#0f0f10"/></svg>';
+      document.querySelectorAll(".spark").forEach((s) => (s.innerHTML = spark));
+
+      // scene 1: kicker words, giant slam, card crash, confetti
+      Z.push(0, 3.0, 1.06);
+      tl.fromTo("#burst", { rotation: 0, scale: 0.2 }, { rotation: 22, scale: 1, duration: 3.0, ease: "expo.out" }, 0);
+      [["#k1", 0.15], ["#k2", 0.45], ["#k3", 0.75]].forEach(([s, t]) => Z.drop(s, t));
+      Z.slam("#hookword", 0.9);
+      Z.kick(0.9, 18);
+      for (let i = 0; i < 4; i++) tl.fromTo("#sp" + i, { scale: 0, rotation: -40 }, { scale: 1, rotation: 0, duration: 0.22, ease: "back.out(2.4)" }, 0.93 + i * 0.05);
+      tl.to("#g-hook", { y: -1100, duration: 0.22, ease: "expo.in" }, 1.25);
+      tl.fromTo("#demo", { y: 1000, rotation: 9 }, { y: 0, rotation: -1.5, duration: 0.3, ease: "expo.out" }, 1.3);
+      tl.fromTo("#up", { strokeDasharray: 1200, strokeDashoffset: 1200 }, { strokeDashoffset: 0, duration: 1.2, ease: "power2.in" }, 1.45);
+      Z.confetti("#confetti", 1.5);
+      Z.count("#meter-v", 12, 99, 1.4, 1.5, "%");
+      Z.sub("#sub1", 1.45, [[1.5, "and"], [1.8, "watched"], [2.1, "it"], [2.35, "die?", 1]]);
+
+      // the failure: flash, grayscale, flatline, thread object falls, giant word cracks
+      const F = 3.0;
+      Z.flash(F);
+      Z.kick(F, 22);
+      tl.set("#sc1", { filter: "grayscale(1)" }, F);
+      tl.set("#up", { opacity: 0 }, F);
+      tl.set("#flat", { opacity: 1 }, F);
+      tl.set("#live", { backgroundColor: "#9a958c" }, F);
+      tl.to("#live", { y: 900, rotation: 200, duration: 0.7, ease: "power2.in" }, F + 0.05);
+      tl.set("#meter-k", { textContent: "SHIPPED" }, F);
+      tl.set("#meter-v", { textContent: "0%" }, F + 0.01);
+      tl.fromTo("#g-oops .half", { scale: 1.6 }, { scale: 1, duration: 0.1, ease: "expo.out" }, F);
+      tl.to("#g-oops .top", { x: -70, y: -40, rotation: -4, duration: 0.25, ease: "expo.in" }, F + 0.35);
+      tl.to("#g-oops .bot", { x: 70, y: 60, rotation: 3, duration: 0.25, ease: "expo.in" }, F + 0.35);
+
+      // scene 2: whip in, side word + card, the thread object draws the route
+      Z.camReset(3.9);
+      Z.whipIn("#sc2", 3.9);
+      Z.push(4.0, 4.0, 1.05);
+      tl.fromTo("#side-word", { y: 220, opacity: 0 }, { y: 0, opacity: 1, duration: 0.2, ease: "expo.out" }, 4.1);
+      tl.fromTo("#route-card", { x: 1300, rotation: 10 }, { x: 0, rotation: -2, duration: 0.3, ease: "expo.out" }, 4.0);
+      const route = document.querySelector("#route"), len = route.getTotalLength(), dot = document.querySelector("#dot2");
+      tl.fromTo(route, { strokeDasharray: len + 50, strokeDashoffset: len + 50 }, { strokeDashoffset: 0, duration: 1.4, ease: "power2.inOut" }, 4.6);
+      const pr = { l: 0 };
+      tl.to(pr, { l: 1, duration: 1.4, ease: "power2.inOut", onUpdate: () => { const p = route.getPointAtLength(pr.l * len); dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y); } }, 4.6);
+      Z.kick(6.0, 12);
+      Z.count("#meter-v", 0, 40, 4.6, 1.4, "%", false);
+      Z.sub("#sub2", 4.5, [[4.6, "Every"], [4.9, "word"], [5.2, "lands"], [5.5, "on"], [5.7, "its"], [5.9, "beat.", 1]]);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
