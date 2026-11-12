@@ -42,6 +42,14 @@ Kits are plugins that set up a whole workflow: skills, scripts and a workspace t
 |-----|-------------|---------|
 | [`video-studio`](kits/video-studio/) | Make videos with Claude Code. `/video-studio:setup` builds a video workspace (folders, brand file, `.env`, HyperFrames, optional Google Flow); drop references in `inbox/` and run `/video-studio:make-video` | `/plugin install video-studio --marketplace logicielsolutions/ai-assets-library` |
 
+## Modules
+
+Modules are Python packages for the apps you build, installed with pip. Each one lives in [`modules/`](modules/).
+
+| Module | What it does | Install |
+|-----|-------------|---------|
+| [`agent-memory`](modules/agent-memory/) | Drop-in long-term memory for any assistant, on Zep Cloud: one memory per user, write rules that drop fake "rules for everyone" and redact cards, IDs, health, salary and passwords, a date and source on every fact, forget on request, expiry. Presets for support, hotel and HR, or your own policy | `pip install -e modules/agent-memory` |
+
 ---
 
 ## Why this exists

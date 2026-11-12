@@ -1,0 +1,17 @@
+[project]
+name = "agent-memory"
+version = "0.6.1"
+description = "Drop-in long-term memory for any assistant, on Zep Cloud: write rules, dated facts, sources, forgetting, expiry"
+requires-python = ">=3.10"
+dependencies = ["zep-cloud>=4.0,<5"]
+
+[project.optional-dependencies]
+# lesson approval in Slack through the team safety net (private repo, Python 3.11+)
+slack = ["agent-safety-net @ git+https://github.com/logicielsolutions/agent-safety-net"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["agent_memory"]
