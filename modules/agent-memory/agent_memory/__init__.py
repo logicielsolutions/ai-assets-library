@@ -5,4 +5,4 @@ from .store import Memory, Fact
 from .lessons import Lessons
 
 __all__ = ["Memory", "Fact", "Lessons", "Screen", "Policy", "PRESETS", "NEVER_STORE"]
-__version__ = "0.5.1"
+__version__ = "0.6.0"
