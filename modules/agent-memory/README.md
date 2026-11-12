@@ -2,7 +2,7 @@
 
 Drop-in long-term memory for any assistant: a support bot, a booking assistant, an HR helper, a sales copilot. Built on [Zep Cloud](https://www.getzep.com/). Each user gets their own memory, and write rules run before anything is stored.
 
-Status: v0.5, Week 2 of the agent-memory specialisation. Scores slightly above Zep on its own, blocks fake rules and private details that Zep stores, acts on forget requests, traces any memory to the chat it came from, and keeps lessons for everyone only once a person approves them.
+Status: v0.6, Week 3 of the agent-memory specialisation. Plugged into the hotel voice agent (Hindi and English calls): returning guests are greeted by name and never asked again for their usual room. Scores slightly above Zep on its own, blocks fake rules and private details that Zep stores, acts on forget requests, traces any memory to the chat it came from, and keeps lessons for everyone only once a person approves them.
 
 ## What it does
 
@@ -11,6 +11,8 @@ Status: v0.5, Week 2 of the agent-memory specialisation. Scores slightly above Z
 - **sources**: lists the conversations a recalled fact came from
 - **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail.
 - **extraction rules** (automatic): each user's memory tells Zep to keep contact details (email, phone, preferred channel) as facts, and to skip facts about the assistant itself ("Priya works at the hotel"). Turn off with `Memory(extract_rules=False)`.
+- **contact details** (automatic): an email the user gives is kept as a fact even when Zep leaves it out.
+- **assistant facts skipped** (automatic): recall leaves out facts about the assistant itself ("Priya works at the hotel"), which take slots and say nothing about the user. The name is the `owner` up to the first comma; `skip_assistant_facts=False` turns it off.
 - **one language** (optional): `Memory(language="English")` stores chats in other languages translated, so a Hindi or Hinglish call becomes English facts that an English question finds. Without it, Zep writes facts in the chat's own language. One extra model call, only for chats that need it.
 - **updates** (automatic): when a fact changes, Zep gives the old one an end date; recall shows it as "no longer true" next to the new one
 - **expiry** (automatic): one-off arrangements that name a date (a cake for 16 October, a late checkout) get an end date when stored; recall labels them once that date has passed

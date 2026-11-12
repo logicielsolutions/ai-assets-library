@@ -1,6 +1,6 @@
 [project]
 name = "agent-memory"
-version = "0.5.1"
+version = "0.6.0"
 description = "Drop-in long-term memory for any assistant, on Zep Cloud: write rules, dated facts, sources, forgetting, expiry"
 requires-python = ">=3.10"
 dependencies = ["zep-cloud>=4.0"]
