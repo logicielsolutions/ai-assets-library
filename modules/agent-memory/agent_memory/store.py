@@ -68,6 +68,10 @@ Return JSON: {{"lines": ["<line 0 in {language}>", ...]}} with exactly {n} lines
 # Text that needs translating before it is stored: Indic scripts, or Hindi written in Latin letters.
 _NOT_ENGLISH = re.compile(r"[\u0900-\u0DFF]|\b(hai|hain|mujhe|mera|meri|chahiye|nahi|aap|kar do|kar lo|ke liye|bhej\w*|batay\w*|bataa\w*)\b", re.I)
 
+# word stems too common to tie a reworded fact to a forget request (first 5 letters, see Memory._reworded)
+_GENERIC = {"forge", "pleas", "remov", "delet", "recor", "memor", "about", "said", "what", "that", "this",
+            "with", "from", "want", "dont", "don't", "keep", "room", "booki", "hotel", "guest", "user", "asked"}
+
 _EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 _DATED = re.compile(r"\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t|tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}/\d{1,2}\b", re.I)
@@ -414,14 +418,7 @@ class Memory:
         rebuilt = list(self.z.graph.edge.list(g, page_size=100, filters=EdgeListFilters(episode_uuids=fresh))) if fresh else []
         # and any fact still naming a scrubbed detail, wherever Zep attached it
         left = [e for e in self.z.graph.edge.list(g, page_size=100) if any(p.search(e.fact) for p in pats)]
-        # Zep also rewords "[removed]" when it rebuilds a fact ("allergic to [removed]" becomes "allergic to
-        # certain foods"), so the rebuilt facts get one more pass of the picker, with the same word guard
-        vague = [e for e in rebuilt if "[removed]" not in e.fact]
-        if vague:
-            listing = "\n".join(f"{i}. {e.fact}" for i, e in enumerate(vague))
-            again = self.screen.ask_json(FORGET_PROMPT.format(request=request, about=about, facts=listing))
-            left += [vague[i] for i in again.get("facts") or [] if isinstance(i, int) and 0 <= i < len(vague)
-                     and asked & set(re.findall(r"[a-z]{4,}", vague[i].fact.lower()))]
+        left += self._reworded(rebuilt, edges, about, request, {keep_episode, request_copy})
         doomed = {e.uuid_: e for e in [edges[i] for i in sorted(picked)] + left + [e for e in rebuilt if "[removed]" in e.fact]}
         for e in doomed.values():
             if request_copy and request_copy in (e.episode_uuids or []) and "[removed]" in e.fact:
@@ -432,6 +429,32 @@ class Memory:
             except Exception:
                 pass   # already removed with its conversation
         return {"facts_deleted": gone, "conversations_rewritten": rewritten}
+
+    def _reworded(self, rebuilt, before, about, request, request_eps):
+        """Zep rewords "[removed]" when it rebuilds a fact ("allergic to [removed]" becomes "allergic to
+        certain foods"). Facts that are new since the forget began get one more pass of the picker.
+        A picked fact is kept unless it shares a word stem with what the user asked to forget
+        ("allergy" / "allergic"). Best effort: the chats are already clean, so an error here must not
+        stop the deletes that follow."""
+        if not self.wait:
+            warnings.warn("forget: wait=False, so reworded facts Zep builds later are not checked")
+            return []
+        old = {e.uuid_ for e in before}
+        vague = [e for e in rebuilt if e.uuid_ not in old and "[removed]" not in e.fact
+                 and not request_eps & set(e.episode_uuids or [])]   # the request's own record stays
+        if not vague:
+            return []
+        listing = "\n".join(f"{i}. {e.fact}" for i, e in enumerate(vague))
+        try:
+            out = self.screen.ask_json(FORGET_PROMPT.format(request=request, about=about, facts=listing))
+        except Exception as e:
+            warnings.warn(f"forget: reworded-fact check failed ({type(e).__name__}); those facts stay")
+            return []
+        picks = out.get("facts") if isinstance(out, dict) else None
+        stems = lambda t: {w[:5] for w in re.findall(r"[a-z]{4,}", t.lower())} - _GENERIC
+        target = stems(about)
+        return [vague[i] for i in picks or [] if isinstance(i, int) and 0 <= i < len(vague)
+                and target & stems(vague[i].fact)]
 
     # ---- expiry ----------------------------------------------------------
     def _set_expiry(self, user, episode, date):

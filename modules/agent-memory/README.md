@@ -9,7 +9,7 @@ Status: v0.6, Week 3 of the agent-memory specialisation. Plugged into the hotel 
 - **remember**: screens a conversation, then stores it for one user
 - **recall**: returns the facts relevant to a question, as they stood on a given date, oldest first so changes read in order
 - **sources**: lists the conversations a recalled fact came from
-- **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail.
+- **forget** (automatic): when a user asks to forget something ("remove my allergy info"), the matching facts are deleted and every earlier conversation that mentions the detail is stored again without it. The request itself is stored without the detail. Facts Zep rebuilds with the gap reworded ("allergic to certain foods") are checked once more and deleted. This needs `wait=True` (the default).
 - **contact details** (automatic): an email the user gives is kept as a fact even when Zep leaves it out.
 - **assistant facts skipped** (automatic): recall leaves out facts about the assistant itself ("Priya works at the hotel"), which take slots and say nothing about the user. The name is the `owner` up to the first comma; `skip_assistant_facts=False` turns it off.
 - **one language** (optional): `Memory(language="English")` stores chats in other languages translated, so a Hindi or Hinglish call becomes English facts that an English question finds. Without it, Zep writes facts in the chat's own language. One extra model call, only for chats that need it.
