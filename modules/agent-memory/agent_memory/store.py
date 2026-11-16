@@ -414,6 +414,14 @@ class Memory:
         rebuilt = list(self.z.graph.edge.list(g, page_size=100, filters=EdgeListFilters(episode_uuids=fresh))) if fresh else []
         # and any fact still naming a scrubbed detail, wherever Zep attached it
         left = [e for e in self.z.graph.edge.list(g, page_size=100) if any(p.search(e.fact) for p in pats)]
+        # Zep also rewords "[removed]" when it rebuilds a fact ("allergic to [removed]" becomes "allergic to
+        # certain foods"), so the rebuilt facts get one more pass of the picker, with the same word guard
+        vague = [e for e in rebuilt if "[removed]" not in e.fact]
+        if vague:
+            listing = "\n".join(f"{i}. {e.fact}" for i, e in enumerate(vague))
+            again = self.screen.ask_json(FORGET_PROMPT.format(request=request, about=about, facts=listing))
+            left += [vague[i] for i in again.get("facts") or [] if isinstance(i, int) and 0 <= i < len(vague)
+                     and asked & set(re.findall(r"[a-z]{4,}", vague[i].fact.lower()))]
         doomed = {e.uuid_: e for e in [edges[i] for i in sorted(picked)] + left + [e for e in rebuilt if "[removed]" in e.fact]}
         for e in doomed.values():
             if request_copy and request_copy in (e.episode_uuids or []) and "[removed]" in e.fact:
