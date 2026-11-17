@@ -13,6 +13,7 @@ The person drops references, says what they want, and waits. You do the rest. St
 
 - Read: the prompt, `WS/inbox/notes.md`, every file in `WS/inbox/`, `WS/brand/brand.md`, `WS/CLAUDE.md`.
 - Pick a short kebab slug. `cp -R WS/projects/_template WS/projects/<slug>`.
+- Files pasted or dragged into the chat go into `01_references/` too: save each one there. Screenshots they give are content, so the video shows them as they are, never redrawn.
 - Move (don't copy) inbox files into `01_references/`, except `inbox/README.md` and `inbox/notes.md`: images → `images/`, videos → `videos/`, their own footage → `raw/`. Copy `notes.md` content into `00_brief.md`, then reset `inbox/notes.md` from the template (`KIT/templates/workspace/inbox/notes.md`).
 - Links into `01_references/links.md`, then save them:
   - Instagram / YouTube / TikTok / Pinterest video: `yt-dlp -o "01_references/videos/%(id)s.%(ext)s" <url>`. If one fails (login wall), mark it failed in `links.md`, tell them in one line to drop that file into `01_references/videos/`, keep going.
@@ -50,9 +51,10 @@ Nothing gets generated or built before they say "go".
    python3 -I "KIT/scripts/vo.py" "<script text>" "WS/projects/<slug>/02_script/vo/vo_full"
    ```
    The `_words.json` timings drive every scene start. No key in `.env`: build without VO and say so.
+   Voiceover comes only from `vo.py`. Never use HyperFrames' own TTS (`hyperframes tts`) and never install Kokoro or another local voice model, even if a HyperFrames skill suggests it.
 2. **Images** (only if the `flow` MCP is connected): load `writing-flow-scene-prompts`. Short prompts (~25 words), batches of about 5 with `flow_agent_images`. Images are free. Veo/Omni clips only if approved at check-in 1. Save to `03_assets/`. No people from real photos unless they gave the photos.
    Without Flow, draw everything in code.
-3. **Edit**: load `/hyperframes:hyperframes`, follow the chosen workflow inside `04_build/`. Put the voiceover and music in the composition. Music only if they own it, else generate a simple bed in code and duck it 12–16 dB under the voice. SFX: UI sounds only (clicks, soft whooshes, pops).
+3. **Edit**: load the `hyperframes` skill (`/hyperframes`, or `/hyperframes:hyperframes` where it's installed as a plugin), follow the chosen workflow inside `04_build/`. Put the voiceover and music in the composition. Music only if they own it, else generate a simple bed in code and duck it 12–16 dB under the voice. SFX: UI sounds only (clicks, soft whooshes, pops).
 4. Log every decision with its date in `00_brief.md`.
 
 ## 5. QA before they see anything

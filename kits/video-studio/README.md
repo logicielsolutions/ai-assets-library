@@ -1,19 +1,26 @@
 # video-studio
 
-Make videos with Claude Code. Drop references in a folder, run one command, get MP4 drafts you can review and refine.
+Make videos with Claude, from the Claude desktop app or the terminal. Drop references in a folder, describe the video, get MP4 drafts you can review and refine.
 
 You don't need to have attended the workshop. Follow the steps below in order.
 
 ## Before you start
 
 - A Mac (Apple Silicon or Intel) or Windows 10/11.
-- [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) installed and signed in. Check with `claude --version`.
+- The [Claude desktop app](https://claude.com/download), signed in. (Or Claude Code in a terminal: see the end of step 1.)
+- [Node.js](https://nodejs.org) LTS, from its normal installer. It's the one install you do yourself.
 - Optional: an [ElevenLabs](https://elevenlabs.io) API key for voiceover. The free tier is fine for tests. Commercial use needs a paid plan.
 - Optional: Google Chrome and a Google account, for AI-generated images and clips through Google Flow.
 
 Setup checks and installs everything else (Node 22+, FFmpeg, yt-dlp, Python 3, HyperFrames).
 
 ## 1. Install the plugin (once)
+
+In the Claude app: **Customize › Plugins › Add marketplace**, enter `logicielsolutions/ai-assets-library`, then install **Video Studio**.
+
+Don't add HyperFrames here. Its repo is too big for this screen and times out; setup installs it for you.
+
+Terminal instead:
 
 ```bash
 claude plugin marketplace add logicielsolutions/ai-assets-library
@@ -22,15 +29,13 @@ claude plugin install video-studio@ai-assets-library
 
 ## 2. Set up your workspace (once)
 
-```bash
-mkdir ~/video-studio && cd ~/video-studio && claude
-```
-
-In Claude, run:
+Make an empty folder (for example `video-studio` in your home folder). In the Claude app, open the **Code** tab, choose **Local**, pick that folder, and say:
 
 ```
-/video-studio:setup
+Set up my video workspace.
 ```
+
+(Terminal: `mkdir ~/video-studio && cd ~/video-studio && claude`, then `/video-studio:setup`.)
 
 It asks four questions:
 
@@ -109,7 +114,8 @@ CLAUDE.md         house rules Claude follows in this folder
 ## Troubleshooting
 
 - **Something is missing or broken:** run `bash <plugin folder>/scripts/doctor.sh` or just re-run `/video-studio:setup`.
-- **`/hyperframes` not found after setup:** restart Claude in the workspace.
+- **`/hyperframes` not found after setup:** start a new session in the workspace.
+- **Adding the HyperFrames marketplace times out in the app:** expected, its repo is ~500 MB. Skip it; setup installs HyperFrames from npm.
 - **A reference link won't download** (Instagram login wall): save the video yourself into `projects/<name>/01_references/videos/`.
 - **Voiceover fails:** the error shows ElevenLabs' own reason (bad key, no credits left).
 - **Every Flow generation fails:** close the Agent panel in Flow's Chrome window.

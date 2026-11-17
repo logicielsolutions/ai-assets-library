@@ -1,7 +1,7 @@
 {
   "name": "video-studio",
-  "version": "0.1.1",
-  "description": "Make videos with Claude Code: /video-studio:setup builds your video workspace (folders, .env, HyperFrames, optional Google Flow), then drop references in inbox/ and run /video-studio:make-video.",
+  "version": "0.2.0",
+  "description": "Make videos with Claude, from the desktop app or the terminal: say \"set up my video workspace\" (folders, .env, HyperFrames, optional Google Flow), then drop references in inbox/ and run /video-studio:make-video.",
   "author": {
     "name": "Manjot",
     "email": "manjot@logiciel.io"
