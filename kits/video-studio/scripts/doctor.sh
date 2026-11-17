@@ -28,10 +28,13 @@ if [ -f "$WS/.env" ]; then
   [ -n "$key" ] && pass "ELEVENLABS_API_KEY set" || fail "ELEVENLABS_API_KEY empty" "paste your key into .env (voiceover is skipped without it)"
 else fail ".env" "cp .env.example .env"; fi
 
-echo "Claude Code"
-if command -v claude >/dev/null; then
-  claude plugin list 2>/dev/null | grep -qi hyperframes && pass "HyperFrames plugin" || fail "HyperFrames plugin" "claude plugin marketplace add heygen-com/hyperframes && claude plugin install hyperframes@hyperframes"
-  claude mcp get flow >/dev/null 2>&1 && pass "flow MCP (Google Flow)" || fail "flow MCP (optional)" "run /video-studio:setup and choose Google Flow"
-fi
+echo "Claude"
+if [ -d "$HOME/.claude/skills/hyperframes" ] || { command -v claude >/dev/null && claude plugin list 2>/dev/null | grep -qi hyperframes; }; then
+  pass "HyperFrames skills"
+else fail "HyperFrames skills" "npx -y hyperframes skills   (or ask Claude: install the HyperFrames skills)"; fi
+if grep -q '"flow"' "$WS/.mcp.json" 2>/dev/null || grep -q '"flow"' "$HOME/.claude.json" 2>/dev/null \
+   || { command -v claude >/dev/null && claude mcp get flow >/dev/null 2>&1; }; then
+  pass "flow MCP (Google Flow)"
+else fail "flow MCP (optional)" "re-run setup and choose Google Flow"; fi
 
 echo; echo "$ok OK, $miss missing"
